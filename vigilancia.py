@@ -5,7 +5,7 @@ import threading
 import os
 
 # --- CONFIGURACIÓN ---
-PATH_NAS = "/mnt/nas_videos/"  # La ruta que configuramos en el fstab
+PATH_NAS = "/mnt/grabaciones_camara/"  # La ruta que configuramos en el fstab
 MIN_AREA = 5000                # Sensibilidad: área mínima en píxeles para detectar movimiento
 DURACION_CLIP = 10             # Cuántos segundos grabar por cada detección
 FPS = 20.0                     # Frames por segundo del video de salida

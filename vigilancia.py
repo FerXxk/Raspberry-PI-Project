@@ -8,8 +8,11 @@ from picamera2 import Picamera2
 # --- CONFIGURACIÓN ---
 PATH_NAS = "/mnt/grabaciones_camara/"
 MIN_AREA = 5000                # Sensibilidad: área mínima en píxeles
-DURACION_CLIP = 10             # Segundos a grabar por video
-FPS = 10.0                     # FPS de grabación (Picamera2 suele ir más fluido pero ajustamos salida)
+FPS = 10.0                     # FPS de grabación
+
+# Configuración de Tiempos
+MAX_DURACION = 60              # Duración máxima de un clip (segundos)
+TIEMPO_SIN_MOVIMIENTO = 5      # Segundos a esperar tras dejar de detectar movimiento
 
 # Verificar directorio
 if not os.path.exists(PATH_NAS):
@@ -21,11 +24,11 @@ if not os.path.exists(PATH_NAS):
 
 def main():
     print("Iniciando Sistema de Vigilancia con Picamera2...")
+    print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
 
     # 1. Configuración de Picamera2
     try:
         picam2 = Picamera2()
-        # Configuración similar a los ejemplos: 640x480 para procesar rápido
         config = picam2.create_preview_configuration(
             main={"size": (640, 480), "format": "RGB888"},
             transform=libcamera.Transform(vflip=True)
@@ -37,70 +40,60 @@ def main():
         print(f"Error fatal al iniciar la cámara: {e}")
         return
 
-    # Esperar a que la cámara se estabilice
     time.sleep(2)
 
     fondo = None
     grabando = False
     tiempo_inicio_grabacion = 0
+    ultimo_movimiento_time = 0
     out = None
 
     try:
         while True:
-            # 2. Captura de frame
-            # capture_array() devuelve un array numpy (BGR o RGB según config)
-            # En config pusimos RGB888, pero OpenCV usa BGR.
-            # Picamera2 por defecto en capture_array suele dar BGR si no se especifica lo contrario o saca lo que hay.
-            # Verificaremos: create_preview_configuration con "format": "RGB888" da RGB. OpenCV necesita BGR.
-            # Hacemos conversión o ajustamos config. 
-            # Mejor dejar que capture y convertir si es necesario, o capturar BGR.
-            # Probaremos capturar y convertir.
-            
+            # 2. Captura y Conversión
             frame = picam2.capture_array()
-            # Picamera2 devuelve RGB por defecto en configuraciones simples si no se toca, pero aquí forzamos RGB.
-            # OpenCV usa BGR.
             frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-            # 3. Procesamiento de imagen
+            # 3. Procesamiento
             gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            # Desenfoque para reducir ruido
             gris = cv2.GaussianBlur(gris, (21, 21), 0)
 
             if fondo is None:
                 fondo = gris
                 continue
 
-            # Diferencia absoluta
             diferencia = cv2.absdiff(fondo, gris)
-            
-            # Umbralizar
             _, umbral = cv2.threshold(diferencia, 25, 255, cv2.THRESH_BINARY)
             umbral = cv2.dilate(umbral, None, iterations=2)
 
-            # Contornos
             contornos, _ = cv2.findContours(umbral.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-            movimiento = False
+            movimiento_actual = False
             for c in contornos:
                 if cv2.contourArea(c) < MIN_AREA:
                     continue
-                movimiento = True
+                movimiento_actual = True
                 break
 
+            ahora = time.time()
+
+            # Si hay movimiento, actualizamos el temporizador de "último visto"
+            if movimiento_actual:
+                ultimo_movimiento_time = ahora
+
             # 4. Lógica de grabación
-            if movimiento and not grabando:
+            if movimiento_actual and not grabando:
+                # INICIAR GRABACIÓN
                 grabando = True
-                tiempo_inicio_grabacion = time.time()
+                tiempo_inicio_grabacion = ahora
                 
-                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                # Timestamp bonito: DD-MM-YYYY__HH-MM-SS
+                timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
                 filename = os.path.join(PATH_NAS, f"alerta_{timestamp}.avi")
                 
-                print(f"Movimiento detectado! Grabando en: {filename}")
+                print(f"[REC] Inicio: {filename}")
                 
-                # Configurar VideoWriter
-                # Usamos MJPG o XVID
                 fourcc = cv2.VideoWriter_fourcc(*'XVID')
-                # Tamaño debe coincidir con el frame (640x480)
                 height, width, _ = frame.shape
                 out = cv2.VideoWriter(filename, fourcc, FPS, (width, height))
 
@@ -108,25 +101,37 @@ def main():
                 if out is not None:
                     out.write(frame)
                 
-                # Chequear duración
-                if time.time() - tiempo_inicio_grabacion > DURACION_CLIP:
+                # CONDICIONES DE PARADA
+                duracion_actual = ahora - tiempo_inicio_grabacion
+                tiempo_quieto = ahora - ultimo_movimiento_time
+                
+                razon_parada = ""
+                if duracion_actual > MAX_DURACION:
+                    razon_parada = "Tiempo máximo excedido"
+                elif not movimiento_actual and tiempo_quieto > TIEMPO_SIN_MOVIMIENTO:
+                    # Solo paramos si ha pasado X tiempo desde el último movimiento
+                    razon_parada = "Sin movimiento"
+                
+                if razon_parada:
                     grabando = False
                     if out is not None:
                         out.release()
                         out = None
-                    print("Grabación finalizada. Volviendo a vigilar.")
-                    # Actualizar fondo para evitar falsos positivos residuales
+                    print(f"[STOP] {razon_parada}. Volviendo a vigilar.")
                     fondo = gris
 
             # 5. Visualización
-            estado_texto = "GRABANDO" if grabando else "VIGILANDO"
-            color_texto = (0, 0, 255) if grabando else (0, 255, 0)
+            if grabando:
+                estado_texto = f"GRABANDO ({int(ahora - tiempo_inicio_grabacion)}s)"
+                color_texto = (0, 0, 255) # Rojo
+            else:
+                estado_texto = "VIGILANDO"
+                color_texto = (0, 255, 0) # Verde
             
             cv2.putText(frame, f"Estado: {estado_texto}", (10, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_texto, 2)
             
-            # Dibujar rectángulos en movimiento
-            if movimiento:
+            if movimiento_actual:
                  for c in contornos:
                     if cv2.contourArea(c) >= MIN_AREA:
                         (x, y, wa, ha) = cv2.boundingRect(c)
@@ -134,7 +139,6 @@ def main():
 
             cv2.imshow("Monitor PI", frame)
 
-            # Salir con 'q'
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 

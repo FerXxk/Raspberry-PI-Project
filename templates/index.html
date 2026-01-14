@@ -22,8 +22,20 @@
 
                 <!-- Temp Card -->
                 <div class="info-card">
-                    <span class="info-label">CPU Temp</span>
+                    <span class="info-label">Temp</span>
                     <span class="info-value" id="temp-val">--°C</span>
+                </div>
+
+                <!-- Humidity Card -->
+                <div class="info-card">
+                    <span class="info-label">Humedad</span>
+                    <span class="info-value" id="humidity-val">--%</span>
+                </div>
+
+                <!-- Pressure Card -->
+                <div class="info-card">
+                    <span class="info-label">Presión</span>
+                    <span class="info-value" id="pressure-val">-- hPa</span>
                 </div>
 
                 <!-- Time Card -->
@@ -55,6 +67,8 @@
 
                 const statusVal = document.getElementById('status-val');
                 const tempVal = document.getElementById('temp-val');
+                const humVal = document.getElementById('humidity-val');
+                const presVal = document.getElementById('pressure-val');
 
                 // Status Text
                 let displayText = data.status;
@@ -62,28 +76,19 @@
                     displayText += ` (${data.duration}s)`;
                 }
 
-                statusElement.innerText = displayText;
-                if (data.temp) {
-                    tempElement.innerText = data.temp;
-                }
-                if (data.humidity) {
-                    document.getElementById('humidity-text').innerText = data.humidity;
-                }
-                if (data.pressure) {
-                    document.getElementById('pressure-text').innerText = data.pressure;
-                }
+                if (statusVal) statusVal.innerText = displayText;
+                if (tempVal && data.temp) tempVal.innerText = data.temp;
+                if (humVal && data.humidity) humVal.innerText = data.humidity;
+                if (presVal && data.pressure) presVal.innerText = data.pressure;
 
                 // Status Color
-                statusVal.className = 'info-value'; // Reset
-                if (data.status === 'GRABANDO') {
-                    statusVal.classList.add('value-grabando');
-                } else {
-                    statusVal.classList.add('value-vigilando');
-                }
-
-                // Temp
-                if (data.temp) {
-                    tempVal.innerText = data.temp;
+                if (statusVal) {
+                    statusVal.className = 'info-value'; // Reset
+                    if (data.status === 'GRABANDO') {
+                        statusVal.classList.add('value-grabando');
+                    } else {
+                        statusVal.classList.add('value-vigilando');
+                    }
                 }
 
             } catch (error) {

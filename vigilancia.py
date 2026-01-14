@@ -12,6 +12,7 @@ from sense_hat import SenseHat
 outputFrame = None
 global_status = "INICIANDO"
 lock = threading.Lock()
+sense = None
 
 app = Flask(__name__)
 

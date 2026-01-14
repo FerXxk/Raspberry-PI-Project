@@ -34,8 +34,7 @@ def status():
     
     return jsonify(response)
 
-def generate_frames():
-    camera = current_app.camera
+def generate_frames(camera):
     while True:
         frame_bytes = camera.get_frame()
         if frame_bytes:
@@ -47,4 +46,5 @@ def generate_frames():
 
 @main_bp.route("/video_feed")
 def video_feed():
-    return Response(generate_frames(), mimetype="multipart/x-mixed-replace; boundary=frame")
+    camera = current_app.camera
+    return Response(generate_frames(camera), mimetype="multipart/x-mixed-replace; boundary=frame")

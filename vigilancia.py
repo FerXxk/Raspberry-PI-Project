@@ -6,6 +6,7 @@ import libcamera
 from picamera2 import Picamera2
 from flask import Flask, Response, render_template, jsonify
 import threading
+from gestor_almacenamiento import GestorAlmacenamiento
 
 # --- GLOBAL VARS FOR FLASK ---
 outputFrame = None
@@ -77,15 +78,27 @@ if not os.path.exists(PATH_NAS):
         print(f"Error al crear directorio {PATH_NAS}: {e}")
         exit(1)
 
+def start_storage_manager():
+    gestor = GestorAlmacenamiento(PATH_NAS, max_days=7, max_usage_percent=90)
+    while True:
+        gestor.ejecutar_limpieza()
+        # Verificar cada 30 minutos (1800 segundos)
+        time.sleep(1800)
+
 def main():
     global outputFrame, lock, global_status, tiempo_inicio_grabacion
     print("Iniciando Sistema de Vigilancia con Picamera2...")
     print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
 
     # 0. Iniciar Flask en un hilo separado
-    t = threading.Thread(target=start_flask)
-    t.daemon = True
-    t.start()
+    t_flask = threading.Thread(target=start_flask)
+    t_flask.daemon = True
+    t_flask.start()
+
+    # 0.1 Iniciar Gestor de Almacenamiento en hilo separado
+    t_storage = threading.Thread(target=start_storage_manager)
+    t_storage.daemon = True
+    t_storage.start()
 
     # 1. Configuración de Picamera2
     try:

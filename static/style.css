@@ -28,36 +28,50 @@ body {
 
 header {
     margin-bottom: 2rem;
-    text-align: center;
-    border-bottom: 1px solid var(--border);
     padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
 }
 
-h1 {
+.header-info {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+.info-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 140px;
+}
+
+.info-label {
+    display: block;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+}
+
+.info-value {
+    font-size: 1.1rem;
     font-weight: 600;
-    margin: 0;
-    font-size: 2rem;
-    color: var(--accent);
+    color: var(--text-primary);
 }
 
-.status-badge {
-    display: inline-block;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: white;
-    margin-top: 10px;
-    transition: background-color 0.3s ease;
-}
-
-.status-vigilando {
-    background-color: #238636;
+/* Status Colors for the Value only */
+.value-vigilando {
+    color: #46954a;
     /* Green */
 }
 
-.status-grabando {
-    background-color: #da3633;
+.value-grabando {
+    color: #f85149;
     /* Red */
     animation: pulse 2s infinite;
 }
@@ -78,16 +92,13 @@ h1 {
 
 .video-container {
     width: 80%;
-    height: auto;
-    background-color: var(--card-bg);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    margin: 0 auto;
+    /* Center */
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    /* Clean look: no border, no background */
 }
 
 .video-feed {

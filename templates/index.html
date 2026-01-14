@@ -11,11 +11,26 @@
 <body>
     <div class="container">
         <header>
-            <h1>Cámara de Vigilancia</h1>
-            <div class="status-badge">
-                <span id="status-text">CARGANDO...</span> •
-                <span id="temp-text">--°C</span> •
-                <span id="clock">--:--:--</span>
+            <h1 style="text-align: center;">Cámara de Vigilancia</h1>
+
+            <div class="header-info">
+                <!-- Status Card -->
+                <div class="info-card">
+                    <span class="info-label">Estado</span>
+                    <span class="info-value" id="status-val">CARGANDO...</span>
+                </div>
+
+                <!-- Temp Card -->
+                <div class="info-card">
+                    <span class="info-label">CPU Temp</span>
+                    <span class="info-value" id="temp-val">--°C</span>
+                </div>
+
+                <!-- Time Card -->
+                <div class="info-card">
+                    <span class="info-label">Hora Local</span>
+                    <span class="info-value" id="time-val">--:--:--</span>
+                </div>
             </div>
         </header>
 
@@ -30,42 +45,44 @@
     <script>
         function updateClock() {
             const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
+            document.getElementById('time-val').innerText = now.toLocaleTimeString();
         }
 
         async function updateStatus() {
             try {
                 const response = await fetch('/status');
                 const data = await response.json();
-                const statusElement = document.getElementById('status-text');
-                const badgeElement = document.querySelector('.status-badge');
-                const tempElement = document.getElementById('temp-text');
 
+                const statusVal = document.getElementById('status-val');
+                const tempVal = document.getElementById('temp-val');
+
+                // Status Text
                 let displayText = data.status;
                 if (data.status === 'GRABANDO' && data.duration !== undefined) {
                     displayText += ` (${data.duration}s)`;
                 }
+                statusVal.innerText = displayText;
 
-                statusElement.innerText = displayText;
-                if (data.temp) {
-                    tempElement.innerText = data.temp;
-                }
-
-                // Reset classes
-                badgeElement.classList.remove('status-vigilando', 'status-grabando');
-
+                // Status Color
+                statusVal.className = 'info-value'; // Reset
                 if (data.status === 'GRABANDO') {
-                    badgeElement.classList.add('status-grabando');
+                    statusVal.classList.add('value-grabando');
                 } else {
-                    badgeElement.classList.add('status-vigilando');
+                    statusVal.classList.add('value-vigilando');
                 }
+
+                // Temp
+                if (data.temp) {
+                    tempVal.innerText = data.temp;
+                }
+
             } catch (error) {
                 console.error('Error fetching status:', error);
             }
         }
 
         setInterval(updateClock, 1000);
-        setInterval(updateStatus, 1000); // Poll status every 1s
+        setInterval(updateStatus, 1000);
         updateClock();
         updateStatus();
     </script>

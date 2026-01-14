@@ -6,7 +6,8 @@ Este proyecto consiste en una solución de seguridad basada en Edge Computing qu
 
 Actualmente, el proyecto ha evolucionado a una solución integral que combina visión artificial, gestión automática de almacenamiento y una interfaz web de monitoreo en tiempo real. Utiliza la librería moderna **Picamera2** para máximo rendimiento en Raspberry Pi OS (Bullseye/Bookworm).
 
-### 1. Sistema de Vigilancia (Core)
+### 1. Sistema de Vigilancia (Core - `run.py` & `modules/`)
+- **Arquitectura**: Código reestructurado en módulos (`camera.py`, `sensors.py`) orquestados por `run.py`.
 - **Motor de Captura**: **Picamera2** basado en `libcamera` para acceso eficiente al hardware.
 - **Detección de Movimiento**: Algoritmos de **OpenCV** (Blur, Thresholding, Contornos) para detectar intrusos.
 - **Grabación Inteligente**:
@@ -23,7 +24,7 @@ Sistema accesible desde cualquier navegador en la red local (`http://<IP-RASPBER
 - **Diseño Responsivo**: Adaptado para móviles y escritorio.
 
 ### 3. Gestor de Almacenamiento Automático (NAS)
-Módulo inteligente (`gestor_almacenamiento.py`) que asegura que el disco nunca se llene.
+Módulo inteligente (`modules/storage.py`) que asegura que el disco nunca se llene.
 - **Políticas de Limpieza**:
     1. **Por Antigüedad**: Borra videos con más de **7 días** de antigüedad.
     2. **Por Espacio**: Si el disco supera el **90% de uso**, borra los videos más antiguos hasta liberar un 5% de espacio.
@@ -37,7 +38,7 @@ Módulo inteligente (`gestor_almacenamiento.py`) que asegura que el disco nunca 
 - **Almacenamiento**: Gestión automática con `shutil` y `os`.
 
 ## 📂 Configuraciones Clave
-El script `vigilancia.py` centraliza la configuración:
+El archivo `config.py` centraliza la configuración del sistema:
 ```python
 PATH_NAS = "/mnt/grabaciones_camara/"
 MIN_AREA = 5000                # Sensibilidad al movimiento

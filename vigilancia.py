@@ -4,6 +4,51 @@ import datetime
 import os
 import libcamera
 from picamera2 import Picamera2
+from flask import Flask, Response, render_template_string
+import threading
+
+# --- GLOBAL VARS FOR FLASK ---
+outputFrame = None
+lock = threading.Lock()
+
+app = Flask(__name__)
+
+@app.route("/")
+def index():
+    return render_template_string("""
+        <html>
+          <head>
+            <title>Cámara de Vigilancia - En Vivo</title>
+            <style>
+              body { background-color: #222; color: #eee; font-family: sans-serif; text-align: center; margin-top: 50px; }
+              img { border: 2px solid #555; border-radius: 8px; max-width: 90%; }
+            </style>
+          </head>
+          <body>
+            <h1>Vigilancia en Vivo</h1>
+            <img src="{{ url_for('video_feed') }}">
+          </body>
+        </html>
+    """)
+
+def generate():
+    global outputFrame, lock
+    while True:
+        with lock:
+            if outputFrame is None:
+                continue
+            (flag, encodedImage) = cv2.imencode(".jpg", outputFrame)
+            if not flag:
+                continue
+        yield(b'--frame\r\n' b'Content-Type: image/jpeg\r\n\r\n' + bytearray(encodedImage) + b'\r\n')
+
+@app.route("/video_feed")
+def video_feed():
+    return Response(generate(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
+def start_flask():
+    # Ejecutar Flask en modo accesible desde la red local
+    app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
 
 # --- CONFIGURACIÓN ---
 PATH_NAS = "/mnt/grabaciones_camara/"
@@ -25,6 +70,11 @@ if not os.path.exists(PATH_NAS):
 def main():
     print("Iniciando Sistema de Vigilancia con Picamera2...")
     print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
+
+    # 0. Iniciar Flask en un hilo separado
+    t = threading.Thread(target=start_flask)
+    t.daemon = True
+    t.start()
 
     # 1. Configuración de Picamera2
     try:
@@ -136,6 +186,10 @@ def main():
                     if cv2.contourArea(c) >= MIN_AREA:
                         (x, y, wa, ha) = cv2.boundingRect(c)
                         cv2.rectangle(frame, (x, y), (x + wa, y + ha), (0, 255, 0), 2)
+
+            # Actualizar frame para Flask
+            with lock:
+                outputFrame = frame.copy()
 
             cv2.imshow("Monitor PI", frame)
 

@@ -4,7 +4,7 @@ import datetime
 import os
 import libcamera
 from picamera2 import Picamera2
-from flask import Flask, Response, render_template_string
+from flask import Flask, Response, render_template
 import threading
 
 # --- GLOBAL VARS FOR FLASK ---
@@ -15,21 +15,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return render_template_string("""
-        <html>
-          <head>
-            <title>Cámara de Vigilancia - En Vivo</title>
-            <style>
-              body { background-color: #222; color: #eee; font-family: sans-serif; text-align: center; margin-top: 50px; }
-              img { border: 2px solid #555; border-radius: 8px; max-width: 90%; }
-            </style>
-          </head>
-          <body>
-            <h1>Vigilancia en Vivo</h1>
-            <img src="{{ url_for('video_feed') }}">
-          </body>
-        </html>
-    """)
+    return render_template("index.html")
 
 def generate():
     global outputFrame, lock

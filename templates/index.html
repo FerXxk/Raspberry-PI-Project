@@ -15,6 +15,8 @@
             <div class="status-badge">
                 <span id="status-text">CARGANDO...</span> •
                 <span id="temp-text">--°C</span> •
+                <span id="humidity-text">--%</span> •
+                <span id="pressure-text">-- hPa</span> •
                 <span id="clock">--:--:--</span>
             </div>
         </header>
@@ -49,6 +51,12 @@
                 statusElement.innerText = displayText;
                 if (data.temp) {
                     tempElement.innerText = data.temp;
+                }
+                if (data.humidity) {
+                    document.getElementById('humidity-text').innerText = data.humidity;
+                }
+                if (data.pressure) {
+                    document.getElementById('pressure-text').innerText = data.pressure;
                 }
 
                 // Reset classes

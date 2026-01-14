@@ -6,6 +6,7 @@ import libcamera
 from picamera2 import Picamera2
 from flask import Flask, Response, render_template, jsonify
 import threading
+from sense_hat import SenseHat
 
 # --- GLOBAL VARS FOR FLASK ---
 outputFrame = None
@@ -20,25 +21,33 @@ def index():
 
 @app.route("/status")
 def status():
-    global global_status, tiempo_inicio_grabacion
+    global global_status, tiempo_inicio_grabacion, sense
     
     # Calcular duración si está grabando
     duracion = 0
     if global_status == "GRABANDO":
         duracion = int(time.time() - tiempo_inicio_grabacion)
     
-    # Simular lectura de temperatura (o leer si es posible)
-    temp = "42°C" 
+    # Leer sensores del Sense HAT
+    temp = "--°C"
+    humidity = "--%"
+    pressure = "-- hPa"
     try:
-        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
-            temp = f"{int(f.read()) / 1000:.1f}°C"
-    except:
-        pass
-
+        temp_value = sense.get_temperature()
+        temp = f"{temp_value:.1f}°C"
+        humidity_value = sense.get_humidity()
+        humidity = f"{humidity_value:.1f}%"
+        pressure_value = sense.get_pressure()
+        pressure = f"{pressure_value:.1f} hPa"
+    except Exception as e:
+        print(f"Error al leer sensores del Sense HAT: {e}")
+    
     return jsonify({
         "status": global_status,
         "duration": duracion,
-        "temp": temp
+        "temp": temp,
+        "humidity": humidity,
+        "pressure": pressure
     })
 
 def generate():
@@ -86,6 +95,11 @@ def main():
     t = threading.Thread(target=start_flask)
     t.daemon = True
     t.start()
+
+    # Inicializar Sense HAT
+    global sense
+    sense = SenseHat()
+    print("Sense HAT inicializado.")
 
     # 1. Configuración de Picamera2
     try:

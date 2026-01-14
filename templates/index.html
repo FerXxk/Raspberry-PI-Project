@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Vigilancia Pi</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
+
 <body>
     <div class="container">
         <header>
             <h1>Cámara de Vigilancia</h1>
-            <div class="status-badge">En Vivo • <span id="clock">--:--:--</span></div>
+            <div class="status-badge">
+                <span id="status-text">CARGANDO...</span> • <span id="clock">--:--:--</span>
+            </div>
         </header>
-        
+
         <main>
             <div class="video-container">
                 <img src="{{ url_for('video_feed') }}" alt="Transmisión en vivo" class="video-feed">
             </div>
         </main>
 
-        <footer>
-            Raspberry Pi Surveillance System
-        </footer>
     </div>
 
     <script>
@@ -29,8 +30,34 @@
             const now = new Date();
             document.getElementById('clock').innerText = now.toLocaleTimeString();
         }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                const statusElement = document.getElementById('status-text');
+                const badgeElement = document.querySelector('.status-badge');
+
+                statusElement.innerText = data.status;
+
+                // Reset classes
+                badgeElement.classList.remove('status-vigilando', 'status-grabando');
+
+                if (data.status === 'GRABANDO') {
+                    badgeElement.classList.add('status-grabando');
+                } else {
+                    badgeElement.classList.add('status-vigilando');
+                }
+            } catch (error) {
+                console.error('Error fetching status:', error);
+            }
+        }
+
         setInterval(updateClock, 1000);
+        setInterval(updateStatus, 1000); // Poll status every 1s
         updateClock();
+        updateStatus();
     </script>
 </body>
+
 </html>

@@ -4,11 +4,12 @@ import datetime
 import os
 import libcamera
 from picamera2 import Picamera2
-from flask import Flask, Response, render_template
+from flask import Flask, Response, render_template, jsonify
 import threading
 
 # --- GLOBAL VARS FOR FLASK ---
 outputFrame = None
+global_status = "INICIANDO"
 lock = threading.Lock()
 
 app = Flask(__name__)
@@ -16,6 +17,11 @@ app = Flask(__name__)
 @app.route("/")
 def index():
     return render_template("index.html")
+
+@app.route("/status")
+def status():
+    global global_status
+    return jsonify({"status": global_status})
 
 def generate():
     global outputFrame, lock
@@ -54,7 +60,7 @@ if not os.path.exists(PATH_NAS):
         exit(1)
 
 def main():
-    global outputFrame, lock
+    global outputFrame, lock, global_status
     print("Iniciando Sistema de Vigilancia con Picamera2...")
     print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
 
@@ -161,9 +167,11 @@ def main():
             if grabando:
                 estado_texto = f"GRABANDO ({int(ahora - tiempo_inicio_grabacion)}s)"
                 color_texto = (0, 0, 255) # Rojo
+                global_status = "GRABANDO"
             else:
                 estado_texto = "VIGILANDO"
                 color_texto = (0, 255, 0) # Verde
+                global_status = "VIGILANDO"
             
             cv2.putText(frame, f"Estado: {estado_texto}", (10, 20),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_texto, 2)

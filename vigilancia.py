@@ -31,23 +31,33 @@ def status():
         duracion = int(time.time() - tiempo_inicio_grabacion)
     
     # Leer sensores del Sense HAT
-    temp = "--°C"
+    temp_ambiente = "--°C"
     humidity = "--%"
     pressure = "-- hPa"
     try:
-        temp_value = sense.get_temperature()
-        temp = f"{temp_value:.1f}°C"
-        humidity_value = sense.get_humidity()
-        humidity = f"{humidity_value:.1f}%"
-        pressure_value = sense.get_pressure()
-        pressure = f"{pressure_value:.1f} hPa"
+        if sense:
+            temp_value = sense.get_temperature()
+            temp_ambiente = f"{temp_value:.1f}°C"
+            humidity_value = sense.get_humidity()
+            humidity = f"{humidity_value:.1f}%"
+            pressure_value = sense.get_pressure()
+            pressure = f"{pressure_value:.1f} hPa"
     except Exception as e:
         print(f"Error al leer sensores del Sense HAT: {e}")
+
+    # Leer temperatura CPU
+    temp_cpu = "--°C"
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp_cpu = f"{int(f.read()) / 1000:.1f}°C"
+    except:
+        pass
     
     return jsonify({
         "status": global_status,
         "duration": duracion,
-        "temp": temp,
+        "location_temp": temp_ambiente,
+        "cpu_temp": temp_cpu,
         "humidity": humidity,
         "pressure": pressure
     })

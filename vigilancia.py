@@ -68,6 +68,7 @@ if not os.path.exists(PATH_NAS):
         exit(1)
 
 def main():
+    global outputFrame, lock
     print("Iniciando Sistema de Vigilancia con Picamera2...")
     print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
 

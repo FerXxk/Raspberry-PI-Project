@@ -20,8 +20,26 @@ def index():
 
 @app.route("/status")
 def status():
-    global global_status
-    return jsonify({"status": global_status})
+    global global_status, tiempo_inicio_grabacion
+    
+    # Calcular duración si está grabando
+    duracion = 0
+    if global_status == "GRABANDO":
+        duracion = int(time.time() - tiempo_inicio_grabacion)
+    
+    # Simular lectura de temperatura (o leer si es posible)
+    temp = "42°C" 
+    try:
+        with open("/sys/class/thermal/thermal_zone0/temp", "r") as f:
+            temp = f"{int(f.read()) / 1000:.1f}°C"
+    except:
+        pass
+
+    return jsonify({
+        "status": global_status,
+        "duration": duracion,
+        "temp": temp
+    })
 
 def generate():
     global outputFrame, lock
@@ -60,7 +78,7 @@ if not os.path.exists(PATH_NAS):
         exit(1)
 
 def main():
-    global outputFrame, lock, global_status
+    global outputFrame, lock, global_status, tiempo_inicio_grabacion
     print("Iniciando Sistema de Vigilancia con Picamera2...")
     print(f"Configuración: Máx {MAX_DURACION}s por clip, Stop tras {TIEMPO_SIN_MOVIMIENTO}s sin movimiento.")
 
@@ -165,16 +183,9 @@ def main():
 
             # 5. Visualización
             if grabando:
-                estado_texto = f"GRABANDO ({int(ahora - tiempo_inicio_grabacion)}s)"
-                color_texto = (0, 0, 255) # Rojo
                 global_status = "GRABANDO"
             else:
-                estado_texto = "VIGILANDO"
-                color_texto = (0, 255, 0) # Verde
                 global_status = "VIGILANDO"
-            
-            cv2.putText(frame, f"Estado: {estado_texto}", (10, 20),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color_texto, 2)
             
             if movimiento_actual:
                  for c in contornos:

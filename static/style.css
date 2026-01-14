@@ -77,6 +77,8 @@ h1 {
 }
 
 .video-container {
+    width: 80%;
+    height: auto;
     background-color: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;

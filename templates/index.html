@@ -13,7 +13,9 @@
         <header>
             <h1>Cámara de Vigilancia</h1>
             <div class="status-badge">
-                <span id="status-text">CARGANDO...</span> • <span id="clock">--:--:--</span>
+                <span id="status-text">CARGANDO...</span> •
+                <span id="temp-text">--°C</span> •
+                <span id="clock">--:--:--</span>
             </div>
         </header>
 
@@ -37,8 +39,17 @@
                 const data = await response.json();
                 const statusElement = document.getElementById('status-text');
                 const badgeElement = document.querySelector('.status-badge');
+                const tempElement = document.getElementById('temp-text');
 
-                statusElement.innerText = data.status;
+                let displayText = data.status;
+                if (data.status === 'GRABANDO' && data.duration !== undefined) {
+                    displayText += ` (${data.duration}s)`;
+                }
+
+                statusElement.innerText = displayText;
+                if (data.temp) {
+                    tempElement.innerText = data.temp;
+                }
 
                 // Reset classes
                 badgeElement.classList.remove('status-vigilando', 'status-grabando');

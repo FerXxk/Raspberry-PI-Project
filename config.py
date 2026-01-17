@@ -2,9 +2,6 @@ import os
 
 # Rutas de Archivos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# PATH_NAS = "/mnt/grabaciones_camara/"
-# For Windows testing/development, we might want a local fallback, but User has this on Pi. 
-# Keeping original path.
 PATH_NAS = "/mnt/grabaciones_camara/"
 
 # Configuración de Cámara
@@ -20,6 +17,11 @@ MAX_DURACION = 60              # Duración máxima de un clip (segundos)
 
 # Configuración de Almacenamiento
 MAX_DAYS_STORAGE = 7
-MAX_USAGE_PERCENT = 1.5
-STORAGE_CLEANUP_PERCENT = 0.5      # Porcentaje a liberar cuando se limpia por espacio
-STORAGE_CLEANUP_INTERVAL = 600 # 10 min
+MAX_USAGE_PERCENT = 85
+STORAGE_CLEANUP_PERCENT = 5     # Porcentaje a liberar cuando se limpia por espacio
+STORAGE_CLEANUP_INTERVAL = 1800 # 30 min
+
+# Configuración de Telegram
+TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
+TELEGRAM_CHAT_ID = "7013484502" 
+TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta

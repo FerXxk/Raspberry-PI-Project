@@ -31,3 +31,10 @@ AUTO_START_VPN = True            # Iniciar Tailscale automáticamente con run.py
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
 TELEGRAM_CHAT_ID = "7013484502" 
 TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta
+
+# Configuración de Modos de Operación
+OPERATION_MODE = 2               # Modo por defecto: 1 = Portero, 2 = Video Vigilancia
+MODE_DESCRIPTIONS = {
+    1: "Modo Portero (Timbre con foto)",
+    2: "Modo Video Vigilancia (Grabación por movimiento)"
+}

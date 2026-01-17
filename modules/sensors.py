@@ -1,4 +1,5 @@
 import logging
+import threading
 from sense_hat import SenseHat
 
 # Configure logging
@@ -6,8 +7,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Sensors")
 
 class SensorManager:
-    def __init__(self):
+    def __init__(self, mode_manager=None, camera=None):
         self.sense = None
+        self.mode_manager = mode_manager
+        self.camera = camera
+        self.button_thread = None
+        self.is_monitoring = False
+        
         try:
             self.sense = SenseHat()
             # self.sense.clear() # Optional: clear matrix
@@ -51,3 +57,57 @@ class SensorManager:
         except Exception as e:
             logger.error(f"Error leyendo temperatura CPU: {e}")
             return "--°C"
+    
+    def start_button_monitoring(self):
+        """Start monitoring the SenseHat joystick button for doorbell."""
+        if not self.sense:
+            logger.warning("SenseHat not available - button monitoring disabled")
+            return
+        
+        if self.is_monitoring:
+            logger.warning("Button monitoring already started")
+            return
+        
+        self.is_monitoring = True
+        self.button_thread = threading.Thread(target=self._monitor_button, daemon=True)
+        self.button_thread.start()
+        logger.info("Button monitoring started (middle joystick button)")
+    
+    def _monitor_button(self):
+        """Monitor the middle button of the joystick for doorbell trigger."""
+        import time
+        
+        last_state = False
+        
+        while self.is_monitoring:
+            try:
+                # Get joystick events
+                events = self.sense.stick.get_events()
+                
+                for event in events:
+                    # Check for middle button press (direction='middle', action='pressed')
+                    if event.direction == 'middle' and event.action == 'pressed':
+                        # Only trigger in Mode 1
+                        current_mode = self.mode_manager.get_mode() if self.mode_manager else 2
+                        
+                        if current_mode == 1:
+                            logger.info("[BUTTON] Doorbell button pressed in Mode 1")
+                            if self.camera:
+                                self.camera.capture_doorbell_photo()
+                            else:
+                                logger.warning("Camera not available for doorbell")
+                        else:
+                            logger.info(f"[BUTTON] Button pressed but in Mode {current_mode} (ignored)")
+                
+                time.sleep(0.1)  # Small delay to avoid CPU spinning
+                
+            except Exception as e:
+                logger.error(f"Error monitoring button: {e}")
+                time.sleep(1)
+    
+    def stop_button_monitoring(self):
+        """Stop button monitoring."""
+        self.is_monitoring = False
+        if self.button_thread:
+            self.button_thread.join(timeout=2)
+        logger.info("Button monitoring stopped")

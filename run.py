@@ -7,6 +7,7 @@ from modules.camera import VideoCamera
 from modules.sensors import SensorManager
 from modules.storage import GestorAlmacenamiento
 from modules.telegram_service import TelegramService
+from modules.vpn_service import start_vpn
 import config
 
 def start_storage_manager(manager):
@@ -28,7 +29,8 @@ if __name__ == "__main__":
 
     print("Iniciando Sistema de Vigilancia (Restructured)...")
     
-    
+    # 0. Iniciar VPN Tailscale
+    start_vpn()
     
     # 1. Init Modules
     camera = VideoCamera()

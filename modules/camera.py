@@ -164,7 +164,7 @@ class VideoCamera:
                     fallos_ia_consecutivos = 0
                     ultima_revision_ia = ahora
                     timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
-                    filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.avi")
+                    filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.mp4")
                     
                     logger.info(f"[REC] Start (Person Detected): {filename}" if self.detector else f"[REC] Start: {filename}")
                     
@@ -173,7 +173,7 @@ class VideoCamera:
                          # We launch a thread to wait and capture the snapshot so we don't block the video loop
                         threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(),), daemon=True).start()
 
-                    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     height, width, _ = frame.shape
                     out = cv2.VideoWriter(filename, fourcc, config.FPS, (width, height))
 

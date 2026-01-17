@@ -98,7 +98,7 @@ def list_recordings():
     """Return a list of recordings from the NAS directory."""
     recordings = []
     if os.path.exists(config.PATH_NAS):
-        files = [f for f in os.listdir(config.PATH_NAS) if f.endswith('.avi')]
+        files = [f for f in os.listdir(config.PATH_NAS) if f.endswith('.mp4')]
         # Sort by modification time (newest first)
         files.sort(key=lambda x: os.path.getmtime(os.path.join(config.PATH_NAS, x)), reverse=True)
         
@@ -115,5 +115,5 @@ def list_recordings():
 
 @main_bp.route("/recordings/<path:filename>")
 def serve_video(filename):
-    """Serve a video file from the NAS directory."""
-    return send_from_directory(config.PATH_NAS, filename)
+    """Serve a video file from the NAS directory with proper mimetype."""
+    return send_from_directory(config.PATH_NAS, filename, mimetype='video/mp4')

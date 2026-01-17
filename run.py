@@ -30,7 +30,7 @@ if __name__ == "__main__":
     # 1. Init Modules
     camera = VideoCamera()
     sensors = SensorManager()
-    storage = GestorAlmacenamiento(config.PATH_NAS, config.MAX_DAYS_STORAGE, config.MAX_USAGE_PERCENT)
+    storage = GestorAlmacenamiento(config.PATH_NAS, config.MAX_DAYS_STORAGE, config.MAX_USAGE_PERCENT, config.STORAGE_CLEANUP_PERCENT)
     
     # 2. Setup App
     app = create_app()

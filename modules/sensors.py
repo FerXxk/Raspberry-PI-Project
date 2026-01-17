@@ -11,9 +11,10 @@ class SensorManager:
         try:
             self.sense = SenseHat()
             # self.sense.clear() # Optional: clear matrix
-            logger.info("Sense HAT initialized successfully.")
+            # self.sense.clear() # Optional: clear matrix
+            logger.info("Sense HAT inicializado correctamente.")
         except Exception as e:
-            logger.error(f"Failed to initialize Sense HAT: {e}")
+            logger.error(f"Fallo al inicializar Sense HAT: {e}")
             self.sense = None
 
     def get_readings(self):
@@ -35,7 +36,7 @@ class SensorManager:
                 readings["humidity"] = f"{humidity:.1f}%"
                 readings["pressure"] = f"{pressure:.1f} hPa"
             except Exception as e:
-                logger.error(f"Error reading Sense HAT: {e}")
+                logger.error(f"Error leyendo Sense HAT: {e}")
         
         return readings
 
@@ -48,5 +49,5 @@ class SensorManager:
             # Common on simple Windows/Mac dev envs
             return "--°C"
         except Exception as e:
-            logger.error(f"Error reading CPU temp: {e}")
+            logger.error(f"Error leyendo temperatura CPU: {e}")
             return "--°C"

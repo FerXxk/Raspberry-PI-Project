@@ -30,9 +30,9 @@ class VideoCamera:
             )
             self.picam2.configure(config_cam)
             self.picam2.start()
-            logger.info("Picamera2 started successfully.")
+            logger.info("Picamera2 iniciada correctamente.")
         except Exception as e:
-            logger.error(f"Failed to start Picamera2: {e}")
+            logger.error(f"Fallo al iniciar Picamera2: {e}")
             self.picam2 = None
 
     def start(self):
@@ -76,7 +76,7 @@ class VideoCamera:
             try:
                 os.makedirs(config.PATH_NAS)
             except OSError as e:
-                logger.error(f"Error creating NAS directory: {e}")
+                logger.error(f"Error creando el directorio NAS: {e}")
                 # We can continue but recording will fail.
         
         time.sleep(2) # Warmup
@@ -164,7 +164,7 @@ class VideoCamera:
                     self.output_frame = frame.copy()
 
             except Exception as e:
-                logger.error(f"Error in video loop: {e}")
+                logger.error(f"Error en el bucle de video: {e}")
                 time.sleep(0.1)
 
         # Cleanup

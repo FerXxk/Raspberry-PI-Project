@@ -21,6 +21,11 @@ def create_app():
     return app
 
 if __name__ == "__main__":
+    # Suppress output from Werkzeug
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+
     print("Iniciando Sistema de Vigilancia (Restructured)...")
     
     
@@ -28,7 +33,7 @@ if __name__ == "__main__":
     # 1. Init Modules
     camera = VideoCamera()
     sensors = SensorManager()
-    storage = GestorAlmacenamiento(config.PATH_NAS, config.MAX_DAYS_STORAGE, config.MAX_USAGE_PERCENT)
+    storage = GestorAlmacenamiento(config.PATH_NAS, config.MAX_DAYS_STORAGE, config.MAX_USAGE_PERCENT, config.STORAGE_CLEANUP_PERCENT)
     telegram = TelegramService(config.TELEGRAM_TOKEN, config.TELEGRAM_CHAT_ID)
     
     # 2. Setup App
@@ -55,6 +60,18 @@ if __name__ == "__main__":
     t_storage = threading.Thread(target=start_storage_manager, args=(storage,))
     t_storage.daemon = True
     t_storage.start()
+    
+    # Print Initial Storage Status
+    stats = storage.obtener_estado_detallado()
+    if stats:
+        print("\n" + "="*40)
+        print(" ESTADO DE ALMACENAMIENTO (NAS)")
+        print("="*40)
+        print(f" Total:     {stats['total_mb']:.2f} MB")
+        print(f" Usado:     {stats['used_mb']:.2f} MB")
+        print(f" Disponible: {stats['free_mb']:.2f} MB")
+        print(f" Uso %:     {stats['percent']:.1f}%")
+        print("="*40 + "\n")
     
     # 4. Run Server
     try:

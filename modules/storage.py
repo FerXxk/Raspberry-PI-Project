@@ -4,10 +4,11 @@ import time
 import logging
 
 class GestorAlmacenamiento:
-    def __init__(self, path_videos, max_days=7, max_usage_percent=90):
+    def __init__(self, path_videos, max_days=7, max_usage_percent=90, cleaning_percent=5):
         self.path = path_videos
         self.max_days = max_days
         self.max_usage_percent = max_usage_percent
+        self.cleaning_percent = cleaning_percent
         
         # Configurar logging básico si no existe
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - [ALMACENAMIENTO] - %(message)s')
@@ -22,6 +23,25 @@ class GestorAlmacenamiento:
         except FileNotFoundError:
             self.logger.error(f"Ruta no encontrada: {self.path}")
             return 0
+
+    def obtener_estado_detallado(self):
+        """Devuelve un diccionario con info detallada del disco."""
+        try:
+            total, used, free = shutil.disk_usage(self.path)
+            percent = (used / total) * 100
+            # Convert bytes to MB
+            total_mb = total / (1024 * 1024)
+            used_mb = used / (1024 * 1024)
+            free_mb = free / (1024 * 1024)
+            
+            return {
+                "total_mb": total_mb,
+                "used_mb": used_mb,
+                "free_mb": free_mb,
+                "percent": percent
+            }
+        except FileNotFoundError:
+            return None
 
     def limpiar_por_antiguedad(self):
         """Elimina archivos más antiguos que max_days."""
@@ -65,7 +85,7 @@ class GestorAlmacenamiento:
         self.logger.warning(f"Espacio crítico ({uso_actual:.1f}%). Iniciando limpieza de emergencia...")
         
         # Objetivo: Bajar un 5% por debajo del límite para no estar borrando constantemente
-        objetivo_uso = self.max_usage_percent - 5
+        objetivo_uso = self.max_usage_percent - self.cleaning_percent
         
         # Obtener lista de archivos con su fecha de modificación
         archivos = []

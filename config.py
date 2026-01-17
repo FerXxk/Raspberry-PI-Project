@@ -20,8 +20,9 @@ MAX_DURACION = 60              # Duración máxima de un clip (segundos)
 
 # Configuración de Almacenamiento
 MAX_DAYS_STORAGE = 7
-MAX_USAGE_PERCENT = 5
-STORAGE_CLEANUP_INTERVAL = 1800 # 30 min
+MAX_USAGE_PERCENT = 1.5
+STORAGE_CLEANUP_PERCENT = 0.5      # Porcentaje a liberar cuando se limpia por espacio
+STORAGE_CLEANUP_INTERVAL = 600 # 10 min
 
 # Configuración de Telegram
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"

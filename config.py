@@ -30,7 +30,7 @@ AUTO_START_VPN = True            # Iniciar Tailscale automáticamente con run.py
 # Configuración de Telegram
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
 TELEGRAM_CHAT_ID = "7013484502" 
-TELEGRAM_ALERT_DELAY = 5         # Segundos de espera antes de capturar foto para alerta
+TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta
 
 # Configuración de Modos de Operación
 OPERATION_MODE = 2               # Modo por defecto: 1 = Portero, 2 = Video Vigilancia

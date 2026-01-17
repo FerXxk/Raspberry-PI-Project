@@ -24,6 +24,9 @@ STORAGE_CLEANUP_INTERVAL = 1800 # 30 min
 # Configuración de Audio
 VOLUME_LEVEL = 100               # Volumen de reproducción (0-100)
 
+# Configuración de Acceso Remoto
+AUTO_START_VPN = True            # Iniciar Tailscale automáticamente con run.py
+
 # Configuración de Telegram
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
 TELEGRAM_CHAT_ID = "7013484502" 

@@ -31,3 +31,14 @@ AUTO_START_VPN = True            # Iniciar Tailscale automáticamente con run.py
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
 TELEGRAM_CHAT_ID = "7013484502" 
 TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta
+
+# Configuración de Modos de Operación
+OPERATION_MODE = 2               # Modo por defecto: 1 = Portero, 2 = Video Vigilancia
+MODE_DESCRIPTIONS = {
+    1: "Modo Portero (Timbre con foto)",
+    2: "Modo Video Vigilancia (Grabación por movimiento)"
+}
+
+# Configuración de Sonido de Timbre
+DOORBELL_SOUND_PATH = os.path.join(BASE_DIR, "doorbell.mp3")  # Ruta al archivo de sonido
+DOORBELL_SOUND_VOLUME = 100      # Volumen del timbre (0-100)

@@ -13,13 +13,18 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Camera")
 
 class VideoCamera:
-    def __init__(self):
+    def __init__(self, mode_manager=None):
         self.output_frame = None
         self.lock = threading.Lock()
         self.status = "INICIANDO"
         self.recording_start_time = 0
         self.is_running = False
         self.thread = None
+        self.mode_manager = mode_manager
+        self.telegram_service = None
+        
+        # Flag to signal mode change during recording
+        self.stop_recording_flag = False
         
         # Init Camera
         try:
@@ -41,6 +46,10 @@ class VideoCamera:
             self.thread = threading.Thread(target=self._process_video)
             self.thread.daemon = True
             self.thread.start()
+            
+            # Register mode change observer
+            if self.mode_manager:
+                self.mode_manager.register_observer(self._on_mode_change)
 
     def stop(self):
         self.is_running = False
@@ -70,6 +79,7 @@ class VideoCamera:
         grabando = False
         ultimo_movimiento_time = 0
         out = None
+        self.stop_recording_flag = False
         
         # Ensure NAS path exists
         if not os.path.exists(config.PATH_NAS):
@@ -83,10 +93,24 @@ class VideoCamera:
 
         while self.is_running:
             try:
+                # Check current mode
+                current_mode = self.mode_manager.get_mode() if self.mode_manager else 2
+                
                 # 1. Capture
                 frame = self.picam2.capture_array()
                 frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-
+                
+                # Update shared frame for web streaming (both modes)
+                with self.lock:
+                    self.output_frame = frame.copy()
+                
+                # Mode 1: Doorbell - just stream, no motion detection
+                if current_mode == 1:
+                    self.status = "MODO PORTERO"
+                    time.sleep(0.1)  # Reduce CPU usage
+                    continue
+                
+                # Mode 2: Video Surveillance - motion detection
                 # 2. Processing
                 gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 gris = cv2.GaussianBlur(gris, (21, 21), 0)
@@ -138,7 +162,10 @@ class VideoCamera:
                     tiempo_quieto = ahora - ultimo_movimiento_time
                     
                     razon_parada = ""
-                    if duracion_actual > config.MAX_DURACION:
+                    if self.stop_recording_flag:
+                        razon_parada = "Mode change requested"
+                        self.stop_recording_flag = False
+                    elif duracion_actual > config.MAX_DURACION:
                         razon_parada = "Max duration exceeded"
                     elif not movimiento_actual and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
                         razon_parada = "No motion detected"
@@ -157,16 +184,12 @@ class VideoCamera:
                 else:
                     self.status = "VIGILANDO"
 
-                # 5. Visualization overlay
+                # 5. Visualization overlay (Mode 2 only)
                 if movimiento_actual:
                     for c in contornos:
                         if cv2.contourArea(c) >= config.MIN_AREA:
                             (x, y, wa, ha) = cv2.boundingRect(c)
                             cv2.rectangle(frame, (x, y), (x + wa, y + ha), (0, 255, 0), 2)
-
-                # Update shared frame
-                with self.lock:
-                    self.output_frame = frame.copy()
 
             except Exception as e:
                 logger.error(f"Error en el bucle de video: {e}")
@@ -174,6 +197,50 @@ class VideoCamera:
 
     def set_telegram_service(self, service):
         self.telegram_service = service
+    
+    def _on_mode_change(self, old_mode, new_mode):
+        """Callback when mode changes. Stop recording if switching from Mode 2."""
+        logger.info(f"Camera received mode change: {old_mode} → {new_mode}")
+        if old_mode == 2 and new_mode == 1:
+            # Switching from surveillance to doorbell - stop any active recording
+            self.stop_recording_flag = True
+            logger.info("Stopping active recording due to mode change to Mode 1")
+    
+    def capture_doorbell_photo(self):
+        """Capture a single photo for doorbell mode and send via Telegram."""
+        if not self.picam2:
+            logger.error("Camera not available for doorbell photo")
+            return
+        
+        try:
+            logger.info("[DOORBELL] Button pressed - capturing photo")
+            
+            # Capture frame
+            frame = self.picam2.capture_array()
+            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+            
+            # Save temp file
+            timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
+            temp_path = os.path.join(config.BASE_DIR, f"doorbell_{timestamp}.jpg")
+            cv2.imwrite(temp_path, frame)
+            
+            logger.info(f"[DOORBELL] Photo saved: {temp_path}")
+            
+            # Send via Telegram
+            if self.telegram_service:
+                self.telegram_service.send_alert(temp_path, caption="🔔 Timbre - Alguien en la puerta")
+            
+            # Cleanup after a delay (let telegram send first)
+            def cleanup():
+                time.sleep(5)
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    logger.info(f"[DOORBELL] Photo deleted: {temp_path}")
+            
+            threading.Thread(target=cleanup, daemon=True).start()
+            
+        except Exception as e:
+            logger.error(f"Error capturing doorbell photo: {e}")
 
     def _trigger_telegram_alert(self, initial_frame):
         """Waits for configured delay and sends the current best frame (or initial)."""

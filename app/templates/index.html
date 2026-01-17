@@ -50,6 +50,13 @@
                     <span class="info-value" id="time-val">--:--:--</span>
                 </div>
             </div>
+
+            <!-- Mode Toggle Button -->
+            <div class="mode-toggle-container">
+                <button id="mode-toggle-btn" class="mode-toggle-btn" onclick="toggleMode()">
+                    <span id="mode-btn-text">Cambiar a modo portero</span>
+                </button>
+            </div>
         </header>
 
         <main>
@@ -101,8 +108,61 @@
                     }
                 }
 
+                // Update Mode Display
+                const modeBtn = document.getElementById('mode-btn-text');
+
+                if (data.mode !== undefined) {
+                    if (modeBtn) {
+                        // Update button text based on current mode
+                        if (data.mode === 1) {
+                            modeBtn.innerText = 'Cambiar a modo vigilancia';
+                        } else {
+                            modeBtn.innerText = 'Cambiar a modo portero';
+                        }
+                    }
+                }
+
             } catch (error) {
                 console.error('Error fetching status:', error);
+            }
+        }
+
+        async function toggleMode() {
+            try {
+                const response = await fetch('/mode');
+                const data = await response.json();
+                const currentMode = data.mode;
+                const newMode = currentMode === 1 ? 2 : 1;
+
+                const toggleResponse = await fetch('/mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ mode: newMode })
+                });
+
+                const result = await toggleResponse.json();
+
+                if (result.success) {
+                    // Update UI immediately
+                    updateStatus();
+
+                    // Show feedback
+                    const btn = document.getElementById('mode-toggle-btn');
+                    const originalText = btn.querySelector('#mode-btn-text').innerText;
+                    btn.querySelector('#mode-btn-text').innerText = '✓ Modo cambiado!';
+                    btn.style.backgroundColor = '#22c55e';
+
+                    setTimeout(() => {
+                        btn.style.backgroundColor = '';
+                        updateStatus();
+                    }, 2000);
+                } else {
+                    console.error('Failed to toggle mode:', result);
+                }
+            } catch (error) {
+                console.error('Error toggling mode:', error);
             }
         }
 

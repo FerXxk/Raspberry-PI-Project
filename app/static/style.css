@@ -21,7 +21,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1600px;
     padding: 20px;
     box-sizing: border-box;
 }
@@ -35,18 +35,20 @@ header {
 .header-info {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
     margin-top: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    /* Allow horizontal scroll on small screens */
 }
 
 .info-card {
     background-color: var(--card-bg);
     border: 1px solid var(--border);
-    padding: 10px 20px;
+    padding: 10px 15px;
     border-radius: 8px;
     text-align: center;
-    min-width: 140px;
+    min-width: 120px;
 }
 
 .info-label {
@@ -106,4 +108,44 @@ header {
     height: auto;
     border-radius: 6px;
     display: block;
+}
+
+/* Mode Colors */
+.value-mode1 {
+    color: #fbbf24;
+    /* Amber for Doorbell mode */
+}
+
+.value-mode2 {
+    color: #3b82f6;
+    /* Blue for Surveillance mode */
+}
+
+/* Mode Toggle Button */
+.mode-toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.mode-toggle-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.mode-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+}
+
+.mode-toggle-btn:active {
+    transform: translateY(0);
 }

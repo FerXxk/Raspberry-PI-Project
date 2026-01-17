@@ -6,16 +6,23 @@ import requests
 import asyncio
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from telegram.ext import CommandHandler
 import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("TelegramService")
 
+# Suppress noisy HTTP logs from telegram libraries
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("telegram").setLevel(logging.WARNING)
+logging.getLogger("telegram.ext").setLevel(logging.WARNING)
+
 class TelegramService:
-    def __init__(self, token, chat_id):
+    def __init__(self, token, chat_id, mode_manager=None):
         self.token = token
         self.chat_id = chat_id
+        self.mode_manager = mode_manager
         self.app = None
         self.bot = None
         self.loop = None
@@ -32,6 +39,12 @@ class TelegramService:
             # Add handler for voice messages
             voice_handler = MessageHandler(filters.VOICE, self.handle_voice)
             self.app.add_handler(voice_handler)
+            
+            # Add command handlers for mode switching
+            
+            self.app.add_handler(CommandHandler("portero", self.handle_modo1))
+            self.app.add_handler(CommandHandler("vigilancia", self.handle_modo2))
+            self.app.add_handler(CommandHandler("estado", self.handle_estado))
             
             self.bot = self.app.bot
             
@@ -121,3 +134,64 @@ class TelegramService:
         # Run in a separate thread to not block the Camera loop
         sender_thread = threading.Thread(target=_send)
         sender_thread.start()
+    
+    async def handle_modo1(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /modo1 command to switch to Doorbell mode."""
+        try:
+            if self.mode_manager:
+                changed = self.mode_manager.set_mode(1)
+                if changed:
+                    await update.message.reply_text(
+                        "✅ Modo cambiado a: Modo 1 - Portero\n"
+                        "🔔 El botón del SenseHat ahora funciona como timbre.\n"
+                        "📸 Se enviará una foto cuando se presione."
+                    )
+                else:
+                    await update.message.reply_text("ℹ️ Ya estás en Modo 1 - Portero")
+            else:
+                await update.message.reply_text("❌ Mode manager no disponible")
+        except Exception as e:
+            logger.error(f"Error handling /modo1: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def handle_modo2(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /modo2 command to switch to Video Surveillance mode."""
+        try:
+            if self.mode_manager:
+                changed = self.mode_manager.set_mode(2)
+                if changed:
+                    await update.message.reply_text(
+                        "✅ Modo cambiado a: Modo 2 - Video Vigilancia\n"
+                        "🎥 Detección de movimiento activada.\n"
+                        "📹 Se grabará video cuando se detecte movimiento."
+                    )
+                else:
+                    await update.message.reply_text("ℹ️ Ya estás en Modo 2 - Video Vigilancia")
+            else:
+                await update.message.reply_text("❌ Mode manager no disponible")
+        except Exception as e:
+            logger.error(f"Error handling /modo2: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")
+    
+    async def handle_estado(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /estado command to report current mode and status."""
+        try:
+            if self.mode_manager:
+                current_mode = self.mode_manager.get_mode()
+                mode_desc = self.mode_manager.get_mode_description()
+                
+                status_msg = f"📊 Estado del Sistema\n\n"
+                status_msg += f"🔧 Modo Actual: {current_mode}\n"
+                status_msg += f"📝 Descripción: {mode_desc}\n\n"
+                
+                if current_mode == 1:
+                    status_msg += "🔔 Presiona el botón del SenseHat para tomar una foto"
+                else:
+                    status_msg += "🎥 Sistema vigilando - grabará al detectar movimiento"
+                
+                await update.message.reply_text(status_msg)
+            else:
+                await update.message.reply_text("❌ Mode manager no disponible")
+        except Exception as e:
+            logger.error(f"Error handling /estado: {e}")
+            await update.message.reply_text(f"❌ Error: {e}")

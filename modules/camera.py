@@ -32,14 +32,15 @@ class VideoCamera:
         
         # Init Camera
         try:
+            # Configuración de Picamera2 en formato BGR888 (nativo para OpenCV)
             self.picam2 = Picamera2()
             config_cam = self.picam2.create_preview_configuration(
-                main={"size": config.RESOLUTION, "format": "RGB888"},
+                main={"size": config.RESOLUTION, "format": "BGR888"},
                 transform=libcamera.Transform(vflip=True)
             )
             self.picam2.configure(config_cam)
             self.picam2.start()
-            logger.info("Picamera2 iniciada correctamente.")
+            logger.info("Picamera2 iniciada correctamente en modo BGR.")
         except Exception as e:
             logger.error(f"Fallo al iniciar Picamera2: {e}")
             self.picam2 = None
@@ -100,9 +101,8 @@ class VideoCamera:
                 # Check current mode
                 current_mode = self.mode_manager.get_mode() if self.mode_manager else 2
                 
-                # 1. Capture
+                # 1. Capture (Ya viene en BGR por la configuración BGR888)
                 frame = self.picam2.capture_array()
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
                 
                 # Update shared frame for web streaming (both modes)
                 with self.lock:
@@ -239,9 +239,8 @@ class VideoCamera:
         try:
             logger.info("[DOORBELL] Button pressed - capturing photo")
             
-            # Capture frame
+            # Capturar frame (formato BGR nativo)
             frame = self.picam2.capture_array()
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
             
             # Save temp file
             timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")

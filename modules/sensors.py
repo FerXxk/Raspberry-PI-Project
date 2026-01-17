@@ -124,7 +124,7 @@ class SensorManager:
             # -nodisp: no display, -autoexit: exit after playing, -volume: set startup volume
             cmd = f"ffplay -nodisp -autoexit -hide_banner -loglevel quiet -volume {config.DOORBELL_SOUND_VOLUME} \"{config.DOORBELL_SOUND_PATH}\" &"
             os.system(cmd)
-            logger.info("🔔 Doorbell sound playing")
+            logger.info("Doorbell sound playing")
         except Exception as e:
             logger.error(f"Error playing doorbell sound: {e}")
     

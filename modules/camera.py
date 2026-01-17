@@ -83,6 +83,8 @@ class VideoCamera:
         fondo = None
         grabando = False
         ultimo_movimiento_time = 0
+        fallos_ia_consecutivos = 0
+        ultima_revision_ia = 0
         out = None
         self.stop_recording_flag = False
         
@@ -159,6 +161,8 @@ class VideoCamera:
                 if movimiento_actual and not grabando:
                     grabando = True
                     self.recording_start_time = ahora
+                    fallos_ia_consecutivos = 0
+                    ultima_revision_ia = ahora
                     timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
                     filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.avi")
                     
@@ -177,13 +181,23 @@ class VideoCamera:
                     if out is not None:
                         out.write(frame)
                     
-                    # Update person detection status if using AI
-                    persona_presente = movimiento_actual
+                    # Lógica de detección inteligente con IA
+                    persona_presente = movimiento_actual # Fallback si no hay detector
                     if self.detector:
-                        # Re-run detection while recording to see if person is still there
-                        persona_presente, _ = self.detector.detect_person(frame)
-                        if persona_presente:
-                            ultimo_movimiento_time = ahora
+                        # Comprobar cada 1 segundo
+                        if ahora - ultima_revision_ia >= 1.0:
+                            persona_presente, _ = self.detector.detect_person(frame)
+                            ultima_revision_ia = ahora
+                            
+                            if persona_presente:
+                                fallos_ia_consecutivos = 0
+                                ultimo_movimiento_time = ahora
+                            else:
+                                fallos_ia_consecutivos += 1
+                                logger.info(f"IA: Persona no detectada ({fallos_ia_consecutivos}/2 consecutivos)")
+                        else:
+                            # Entre revisiones de 1s, asumimos que sigue igual o nos basamos en movimiento
+                            persona_presente = True if fallos_ia_consecutivos == 0 else False
                     
                     duracion_actual = ahora - self.recording_start_time
                     tiempo_quieto = ahora - ultimo_movimiento_time
@@ -194,8 +208,10 @@ class VideoCamera:
                         self.stop_recording_flag = False
                     elif duracion_actual > config.MAX_DURACION:
                         razon_parada = "Duración máxima alcanzada"
+                    elif self.detector and fallos_ia_consecutivos >= 2:
+                        razon_parada = "Persona no detectada (2s consecutivos)"
                     elif not persona_presente and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
-                        razon_parada = "Persona ya no detectada" if self.detector else "Sin movimiento detectado"
+                        razon_parada = "Persona ausente (timeout)" if self.detector else "Sin movimiento detectado"
                     
                     if razon_parada:
                         grabando = False

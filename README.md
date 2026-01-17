@@ -47,8 +47,8 @@ El software está dividido en módulos independientes coordinados por `run.py`:
 - **`storage.py`**: El "limpiador" del NAS. Controla que el disco no se llene siguiendo dos reglas:
     1. **Antigüedad**: Borra vídeos de más de `MAX_DAYS_STORAGE` (por defecto 7 días).
     2. **Capacidad**: Si el disco supera el `MAX_USAGE_PERCENT` (85%), libera espacio borrando los archivos más antiguos.
-- **`sensors.py`**: Gestiona el SenseHat (temperatura, humedad, presión) y el monitoreo del joystick.
-- **`telegram_service.py`**: Puente de comunicación móvil. Permite recibir alertas y enviar comandos/voz.
+- **`sensors.py`**: Gestiona el SenseHat (temperatura, humedad, presión) y el monitoreo del botón central del joystick.
+- **`telegram_service.py`**: Gestiona la comunicación móvil. Permite recibir alertas y enviar comandos/voz.
 
 ---
 
@@ -91,13 +91,19 @@ MAX_USAGE_PERCENT = 85         # Límite de llenado del disco NAS
 
 ## 🔧 6. Instalación y Puesta en Marcha
 
-### Requisitos Previos
-1. Raspberry Pi 4 con Raspberry Pi OS (vía `libcamera`).
-2. SenseHat y Cámara Pi instalados.
-3. Disco duro o almacenamiento montado en la ruta configurada.
+### Requisitos Previos e Instalación Física
 
-### Pasos de Instalación
+1. **Cámara Pi**: 
+   - Conecta el cable flex al puerto CSI de la Raspberry Pi (asegúrate de que el lado azul mire hacia los puertos USB).
+   - En el software, asegúrate de que la cámara esté habilitada. (En versiones modernas Bookworm/Bullseye, `libcamera` funciona por defecto).
+2. **SenseHat**:
+   - Encaja el SenseHat sobre los pines GPIO de la Raspberry Pi con la Pi apagada. Asegúrate de que todos los pines estén alineados.
+3. **Almacenamiento**: Conecta un disco duro o pendrive y móntalo en la ruta configurada en `config.py` (por defecto `/mnt/grabaciones_camara/`).
+
+### Configuración del Sistema
+
 1. **Expandir Sistema**: `sudo raspi-config` > Advanced Options > Expand Filesystem.
+
 2. **Dependencias del Sistema**:
    ```bash
    sudo apt-get update
@@ -107,7 +113,6 @@ MAX_USAGE_PERCENT = 85         # Límite de llenado del disco NAS
    ```bash
    pip3 install -r requirements.txt
    ```
-4. **Descarga de Modelos**: El sistema descargará automáticamente el modelo TFLite al arrancar por primera vez.
 
 ### Ejecución
 ```bash
@@ -117,14 +122,12 @@ python3 run.py
 ---
 
 ## 🌍 7. Acceso Remoto Seguro
-El proyecto incluye un script de configuración para **Tailscale** (`scripts/setup_tailscale.sh`). Una vez instalado, podrás acceder a la interfaz web y recibir alertas de Telegram incluso si estás en otra ciudad o usando datos móviles, sin necesidad de abrir puertos en tu router.
+El proyecto incluye un script de configuración para **Tailscale** (`scripts/setup_tailscale.sh`). Una vez instalado, podrás acceder a la interfaz web incluso si estás en otra ciudad o usando datos móviles, sin necesidad de abrir puertos en tu router.
+
+**Pasos para configurar Tailscale:**
+1. Ejecuta el script: `bash scripts/setup_tailscale.sh`
+2. Sigue el enlace que se te proporciona para registrar la Raspberry Pi.
+3. Instala Tailscale en tu móvil o computadora y loguéate con la misma cuenta.
+4. Una vez conectados, usa la IP de Tailscale de la Raspberry (ej. `100.x.y.z:5000`) para entrar a la web desde cualquier lugar.
 
 ---
-
-## 🔍 Próximos Pasos (Roadmap)
-- [ ] Reproductor de vídeo nativo en la web para revisar grabaciones.
-- [ ] Zonas de exclusión de movimiento (ignorar árboles o mascotas).
-- [ ] Integración con Home Assistant vía MQTT.
-
----
-*Desarrollado para proyectos de seguridad DIY con Raspberry Pi.* 🛠️

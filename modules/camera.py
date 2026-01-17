@@ -32,15 +32,15 @@ class VideoCamera:
         
         # Init Camera
         try:
-            # Configuración de Picamera2 en formato BGR888 (nativo para OpenCV)
+            # Configuración de Picamera2. Se usa RGB888 pero se ha observado que capture_array entrega BGR en este sistema.
             self.picam2 = Picamera2()
             config_cam = self.picam2.create_preview_configuration(
-                main={"size": config.RESOLUTION, "format": "BGR888"},
+                main={"size": config.RESOLUTION, "format": "RGB888"},
                 transform=libcamera.Transform(vflip=True)
             )
             self.picam2.configure(config_cam)
             self.picam2.start()
-            logger.info("Picamera2 iniciada correctamente en modo BGR.")
+            logger.info("Picamera2 iniciada correctamente (RGB888 config).")
         except Exception as e:
             logger.error(f"Fallo al iniciar Picamera2: {e}")
             self.picam2 = None
@@ -101,8 +101,9 @@ class VideoCamera:
                 # Check current mode
                 current_mode = self.mode_manager.get_mode() if self.mode_manager else 2
                 
-                # 1. Capture (Ya viene en BGR por la configuración BGR888)
+                # 1. Capture - No swap manual ya que el driver entrega BGR directamente con config RGB888
                 frame = self.picam2.capture_array()
+                # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # No rotar si ya es BGR
                 
                 # Update shared frame for web streaming (both modes)
                 with self.lock:
@@ -146,10 +147,12 @@ class VideoCamera:
                     if self.detector:
                         has_person, detections = self.detector.detect_person(frame)
                         if not has_person:
-                            logger.info("AI: Movimiento detectado pero no se reconoce persona. Evitando alerta.")
+                            # Log opcional para debug si hay movimiento pero no persona
+                            # logger.info("IA: Movimiento detectado pero sin persona clara.")
                             movimiento_actual = False # Cancel trigger
                         else:
-                            ultimo_movimiento_time = ahora # Reset timer if person found
+                            logger.info(f"IA: Detección positiva de persona. Iniciando grabación.")
+                            ultimo_movimiento_time = ahora # Reset timer
                     else:
                         ultimo_movimiento_time = ahora # Standard motion logic
                     
@@ -239,7 +242,7 @@ class VideoCamera:
         try:
             logger.info("[DOORBELL] Button pressed - capturing photo")
             
-            # Capturar frame (formato BGR nativo)
+            # Capturar frame (formato BGR nativo se asume)
             frame = self.picam2.capture_array()
             
             # Save temp file

@@ -56,11 +56,11 @@ class PersonDetector:
 
     def detect_person(self, frame):
         """
-        Detects if a person is present in the frame.
-        Returns (bool, detections)
+        Detecta si hay una persona en el frame.
+        Retorna (bool, detections)
         """
         if self.detector is None:
-            # Try to re-initialize if model was missing before
+            # Re-intentar inicialización si el modelo apareció después
             if os.path.exists(config.AI_MODEL_PATH):
                 self._initialize_detector()
             
@@ -68,19 +68,21 @@ class PersonDetector:
                 return False, []
 
         try:
-            # Convert OpenCV BGR to RGB
+            # Importante: frame viene en BGR (OpenCV). Convertir a RGB para MediaPipe.
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
-            # Perform detection
+            # Detección
             detection_result = self.detector.detect(mp_image)
 
-            # Check if any 'person' was detected
-            # Since we have category_allowlist=['person'], any detection is a person
-            has_person = len(detection_result.detections) > 0
-            
-            if has_person:
-                logger.info(f"AI: Person detected with confidence {detection_result.detections[0].categories[0].score:.2f}")
+            # Filtrar por confianza mínima (ya lo hace el objeto detector, pero podemos ser extra estrictos aquí si falla)
+            has_person = False
+            for detection in detection_result.detections:
+                score = detection.categories[0].score
+                if score >= config.AI_CONFIDENCE_THRESHOLD:
+                    logger.info(f"IA: Persona detectada con confianza {score:.2f}")
+                    has_person = True
+                    break
             
             return has_person, detection_result.detections
 

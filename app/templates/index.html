@@ -14,12 +14,6 @@
             <h1 style="text-align: center;">Cámara de Vigilancia</h1>
 
             <div class="header-info">
-                <!-- Mode Card -->
-                <div class="info-card mode-card">
-                    <span class="info-label">Modo Actual</span>
-                    <span class="info-value" id="mode-val">Modo 2</span>
-                </div>
-
                 <!-- Status Card -->
                 <div class="info-card">
                     <span class="info-label">Estado</span>
@@ -60,7 +54,7 @@
             <!-- Mode Toggle Button -->
             <div class="mode-toggle-container">
                 <button id="mode-toggle-btn" class="mode-toggle-btn" onclick="toggleMode()">
-                    <span id="mode-btn-text">Cambiar a Modo 1</span>
+                    <span id="mode-btn-text">Cambiar a modo portero</span>
                 </button>
             </div>
         </header>
@@ -115,23 +109,16 @@
                 }
 
                 // Update Mode Display
-                const modeVal = document.getElementById('mode-val');
                 const modeBtn = document.getElementById('mode-btn-text');
 
                 if (data.mode !== undefined) {
-                    if (modeVal) {
-                        modeVal.innerText = `Modo ${data.mode}`;
-                        modeVal.className = 'info-value';
-                        if (data.mode === 1) {
-                            modeVal.classList.add('value-mode1');
-                        } else {
-                            modeVal.classList.add('value-mode2');
-                        }
-                    }
-
                     if (modeBtn) {
-                        const targetMode = data.mode === 1 ? 2 : 1;
-                        modeBtn.innerText = `Cambiar a Modo ${targetMode}`;
+                        // Update button text based on current mode
+                        if (data.mode === 1) {
+                            modeBtn.innerText = 'Cambiar a modo vigilancia';
+                        } else {
+                            modeBtn.innerText = 'Cambiar a modo portero';
+                        }
                     }
                 }
 

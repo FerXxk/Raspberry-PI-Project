@@ -13,6 +13,11 @@ import config
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("TelegramService")
 
+# Suppress noisy HTTP logs from telegram libraries
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("telegram").setLevel(logging.WARNING)
+logging.getLogger("telegram.ext").setLevel(logging.WARNING)
+
 class TelegramService:
     def __init__(self, token, chat_id, mode_manager=None):
         self.token = token

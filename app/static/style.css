@@ -37,7 +37,9 @@ header {
     justify-content: center;
     gap: 20px;
     margin-top: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    /* Allow horizontal scroll on small screens */
 }
 
 .info-card {

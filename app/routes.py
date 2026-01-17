@@ -105,10 +105,18 @@ def list_recordings():
         for f in files:
             path = os.path.join(config.PATH_NAS, f)
             stat = os.stat(path)
+            
+            # Check for matching thumbnail (.jpg)
+            thumb_name = f.rsplit('.', 1)[0] + ".jpg"
+            thumbnail_url = None
+            if os.path.exists(os.path.join(config.PATH_NAS, thumb_name)):
+                thumbnail_url = f"/thumbnails/{thumb_name}"
+
             recordings.append({
                 "filename": f,
                 "size_mb": round(stat.st_size / (1024 * 1024), 2),
-                "date": datetime.datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M:%S')
+                "date": datetime.datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M:%S'),
+                "thumbnail_url": thumbnail_url
             })
     
     return jsonify(recordings)
@@ -117,3 +125,8 @@ def list_recordings():
 def serve_video(filename):
     """Serve a video file from the NAS directory with proper mimetype."""
     return send_from_directory(config.PATH_NAS, filename, mimetype='video/mp4')
+
+@main_bp.route("/thumbnails/<path:filename>")
+def serve_thumbnail(filename):
+    """Serve a thumbnail image from the NAS directory."""
+    return send_from_directory(config.PATH_NAS, filename)

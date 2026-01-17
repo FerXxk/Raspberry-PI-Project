@@ -59,8 +59,14 @@
                 data.forEach(vid => {
                     const card = document.createElement('div');
                     card.className = 'video-card';
+
+                    // Si hay miniatura, la ponemos de fondo; si no, queda el estilo por defecto del CSS
+                    const thumbStyle = vid.thumbnail_url
+                        ? `style="background-image: url('${vid.thumbnail_url}'); background-size: cover;"`
+                        : '';
+
                     card.innerHTML = `
-                        <div class="card-thumbnail" onclick="playVideo('${vid.filename}')"></div>
+                        <div class="card-thumbnail" onclick="playVideo('${vid.filename}')" ${thumbStyle}></div>
                         <div class="card-content">
                             <span class="card-title">${vid.filename}</span>
                             <div class="card-meta">

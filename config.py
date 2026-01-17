@@ -20,5 +20,5 @@ MAX_DURACION = 60              # Duración máxima de un clip (segundos)
 
 # Configuración de Almacenamiento
 MAX_DAYS_STORAGE = 7
-MAX_USAGE_PERCENT = 5
+MAX_USAGE_PERCENT = 2
 STORAGE_CLEANUP_INTERVAL = 1800 # 30 min

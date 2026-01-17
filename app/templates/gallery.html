@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Galería Premium - Vigilancia Pi</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=4">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    </style>
 </head>
 
 <body>
@@ -31,8 +30,8 @@
     <div id="modal-player" class="modal">
         <button class="btn-close" onclick="closePlayer()">✕</button>
         <div class="modal-container">
-            <h2 id="modal-title" style="margin-bottom: 20px; font-weight: 600;"></h2>
-            <video id="v-player" controls preload="auto">
+            <h2 id="modal-title" style="margin-bottom: 20px; font-weight: 600; color: white; text-align: center;"></h2>
+            <video id="v-player" controls preload="auto" style="width: 100%; border-radius: 12px;">
                 <source id="v-source" src="" type="video/mp4">
             </video>
         </div>

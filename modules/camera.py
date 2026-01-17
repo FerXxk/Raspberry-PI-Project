@@ -251,12 +251,12 @@ class VideoCamera:
     
     def capture_doorbell_photo(self):
         """Dispara el proceso de captura inteligente para el timbre."""
-        threading.Thread(target=self._capture_and_send_smart_alert, args=("🔔 Timbre - Alguien en la puerta",), daemon=True).start()
+        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Timbre - Alguien en la puerta",), daemon=True).start()
 
     def _trigger_telegram_alert(self, initial_frame):
         """Dispara el proceso de captura inteligente para vigilancia."""
         # Se lanza en un hilo para no bloquear el bucle de video
-        threading.Thread(target=self._capture_and_send_smart_alert, args=("🚨 Alerta de Movimiento", initial_frame), daemon=True).start()
+        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Alerta de Movimiento", initial_frame), daemon=True).start()
 
     def _capture_and_send_smart_alert(self, caption="Alerta", fallback_frame=None):
         """

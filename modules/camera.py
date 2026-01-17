@@ -3,6 +3,7 @@ import time
 import datetime
 import os
 import threading
+import subprocess
 import libcamera
 import logging
 from picamera2 import Picamera2
@@ -218,7 +219,10 @@ class VideoCamera:
                         if out is not None:
                             out.release()
                             out = None
-                        logger.info(f"[STOP] {razon_parada}. Returning to surveillance.")
+                            # Iniciar post-procesado con FFmpeg para compatibilidad web total
+                            threading.Thread(target=self._optimize_video_for_web, args=(filename,), daemon=True).start()
+                            
+                        logger.info(f"[STOP] {razon_parada}. Post-processing started for {filename}")
                         fondo = gris
 
                 # 4. Status Update
@@ -237,6 +241,56 @@ class VideoCamera:
             except Exception as e:
                 logger.error(f"Error en el bucle de video: {e}")
                 time.sleep(0.1)
+
+    def _optimize_video_for_web(self, raw_path):
+        """
+        Usa FFmpeg para convertir el vídeo a H.264 optimizado para web (faststart).
+        Esto permite que el vídeo se reproduzca en streaming sin esperar a descargarse entero.
+        """
+        if not os.path.exists(raw_path):
+            return
+
+        final_path = raw_path # El nombre ya termina en .mp4
+        temp_path = raw_path + ".temp.mp4"
+        
+        try:
+            # Renombramos el original a temp
+            os.rename(raw_path, temp_path)
+            
+            logger.info(f"FFmpeg: Optimizando {final_path}...")
+            
+            # Comando FFmpeg:
+            # -i: input
+            # -c:v libx264: codec H.264 (el más compatible)
+            # -preset ultrafast: para que la raspi no sufra
+            # -movflags +faststart: pone el 'moov atom' al principio (clave para streaming)
+            # -y: sobrescribir si existe
+            cmd = [
+                'ffmpeg', '-y', '-i', temp_path,
+                '-c:v', 'libx264', '-preset', 'ultrafast',
+                '-crf', '28', # Balance calidad/velocidad
+                '-movflags', '+faststart',
+                final_path
+            ]
+            
+            # Ejecutar conversión
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                logger.info(f"FFmpeg: Conversión exitosa. Archivo listo para streaming: {final_path}")
+                # Borramos el temporal si todo fue bien
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            else:
+                logger.error(f"FFmpeg falló: {result.stderr}")
+                # Si falla, intentamos dejar el original como estaba para que al menos se pueda descargar
+                if os.path.exists(temp_path) and not os.path.exists(final_path):
+                    os.rename(temp_path, final_path)
+                    
+        except Exception as e:
+            logger.error(f"Error durante el post-procesado de vídeo: {e}")
+            if os.path.exists(temp_path) and not os.path.exists(final_path):
+                os.rename(temp_path, final_path)
 
     def set_telegram_service(self, service):
         self.telegram_service = service

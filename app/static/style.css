@@ -21,7 +21,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1200px;
+    max-width: 1600px;
     padding: 20px;
     box-sizing: border-box;
 }
@@ -35,7 +35,7 @@ header {
 .header-info {
     display: flex;
     justify-content: center;
-    gap: 20px;
+    gap: 15px;
     margin-top: 20px;
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -45,10 +45,10 @@ header {
 .info-card {
     background-color: var(--card-bg);
     border: 1px solid var(--border);
-    padding: 10px 20px;
+    padding: 10px 15px;
     border-radius: 8px;
     text-align: center;
-    min-width: 140px;
+    min-width: 120px;
 }
 
 .info-label {

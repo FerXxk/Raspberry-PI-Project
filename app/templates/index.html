@@ -20,10 +20,16 @@
                     <span class="info-value" id="status-val">CARGANDO...</span>
                 </div>
 
-                <!-- Temp Card -->
+                <!-- CPU Temp Card -->
                 <div class="info-card">
-                    <span class="info-label">Temp</span>
-                    <span class="info-value" id="temp-val">--°C</span>
+                    <span class="info-label">CPU</span>
+                    <span class="info-value" id="cpu-temp-val">--°C</span>
+                </div>
+
+                <!-- Ambient Temp Card -->
+                <div class="info-card">
+                    <span class="info-label">Ambiente</span>
+                    <span class="info-value" id="amb-temp-val">--°C</span>
                 </div>
 
                 <!-- Humidity Card -->
@@ -48,7 +54,7 @@
 
         <main>
             <div class="video-container">
-                <img src="{{ url_for('video_feed') }}" alt="Transmisión en vivo" class="video-feed">
+                <img src="{{ url_for('main.video_feed') }}" alt="Transmisión en vivo" class="video-feed">
             </div>
         </main>
 
@@ -66,7 +72,8 @@
                 const data = await response.json();
 
                 const statusVal = document.getElementById('status-val');
-                const tempVal = document.getElementById('temp-val');
+                const cpuVal = document.getElementById('cpu-temp-val');
+                const ambVal = document.getElementById('amb-temp-val');
                 const humVal = document.getElementById('humidity-val');
                 const presVal = document.getElementById('pressure-val');
 
@@ -77,7 +84,10 @@
                 }
 
                 if (statusVal) statusVal.innerText = displayText;
-                if (tempVal && data.temp) tempVal.innerText = data.temp;
+
+                // Update Values
+                if (cpuVal && data.cpu_temp) cpuVal.innerText = data.cpu_temp;
+                if (ambVal && data.location_temp) ambVal.innerText = data.location_temp;
                 if (humVal && data.humidity) humVal.innerText = data.humidity;
                 if (presVal && data.pressure) presVal.innerText = data.pressure;
 

@@ -92,6 +92,11 @@ class SensorManager:
                         
                         if current_mode == 1:
                             logger.info("[BUTTON] Doorbell button pressed in Mode 1")
+                            
+                            # Play doorbell sound
+                            self._play_doorbell_sound()
+                            
+                            # Capture and send photo
                             if self.camera:
                                 self.camera.capture_doorbell_photo()
                             else:
@@ -104,6 +109,24 @@ class SensorManager:
             except Exception as e:
                 logger.error(f"Error monitoring button: {e}")
                 time.sleep(1)
+    
+    def _play_doorbell_sound(self):
+        """Play doorbell sound effect."""
+        import os
+        import config
+        
+        if not os.path.exists(config.DOORBELL_SOUND_PATH):
+            logger.warning(f"Doorbell sound file not found: {config.DOORBELL_SOUND_PATH}")
+            return
+        
+        try:
+            # Play sound in background using ffplay
+            # -nodisp: no display, -autoexit: exit after playing, -volume: set startup volume
+            cmd = f"ffplay -nodisp -autoexit -hide_banner -loglevel quiet -volume {config.DOORBELL_SOUND_VOLUME} \"{config.DOORBELL_SOUND_PATH}\" &"
+            os.system(cmd)
+            logger.info("🔔 Doorbell sound playing")
+        except Exception as e:
+            logger.error(f"Error playing doorbell sound: {e}")
     
     def stop_button_monitoring(self):
         """Stop button monitoring."""

@@ -37,8 +37,8 @@ class TelegramService:
             
             # Add command handlers for mode switching
             
-            self.app.add_handler(CommandHandler("modo1", self.handle_modo1))
-            self.app.add_handler(CommandHandler("modo2", self.handle_modo2))
+            self.app.add_handler(CommandHandler("portero", self.handle_modo1))
+            self.app.add_handler(CommandHandler("vigilancia", self.handle_modo2))
             self.app.add_handler(CommandHandler("estado", self.handle_estado))
             
             self.bot = self.app.bot

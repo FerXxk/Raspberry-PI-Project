@@ -38,3 +38,7 @@ MODE_DESCRIPTIONS = {
     1: "Modo Portero (Timbre con foto)",
     2: "Modo Video Vigilancia (Grabación por movimiento)"
 }
+
+# Configuración de Sonido de Timbre
+DOORBELL_SOUND_PATH = os.path.join(BASE_DIR, "doorbell.mp3")  # Ruta al archivo de sonido
+DOORBELL_SOUND_VOLUME = 100      # Volumen del timbre (0-100)

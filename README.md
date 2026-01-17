@@ -63,6 +63,17 @@ Accede desde `http://<IP-RASPBERRY>:5000` a un panel de control premium:
 
 ---
 
+## 📂 4. Almacenamiento NAS (Samba)
+
+Tu Raspberry Pi actúa ahora como un servidor de archivos (NAS) para que puedas ver los vídeos directamente desde el explorador de archivos de tu PC o móvil:
+
+- **Configuración rápida**: Ejecuta `bash scripts/setup_samba.sh` una vez.
+- **Nombre de red**: `\\raspberrypi.local\Grabaciones` (en Windows) o `smb://raspberrypi.local/Grabaciones` (en Mac/Móvil).
+- **Control automático**: Cada vez que ejecutas `run.py`, el sistema verifica que el servidor NAS esté activo.
+- **Acceso**: Sin contraseña (puedes navegar las grabaciones libremente dentro de tu red local).
+
+---
+
 ## 📱 4. Control por Telegram
 
 El bot de Telegram es tu mando a distancia:

@@ -8,6 +8,7 @@ from modules.sensors import SensorManager
 from modules.storage import GestorAlmacenamiento
 from modules.telegram_service import TelegramService
 from modules.vpn_service import start_vpn
+from modules.samba_service import ensure_samba_started
 from modules.mode_manager import ModeManager
 import config
 
@@ -40,6 +41,9 @@ if __name__ == "__main__":
     
     # 0.1 Iniciar VPN Tailscale
     start_vpn()
+    
+    # 0.2 Iniciar NAS (Samba)
+    ensure_samba_started()
     
     # 1. Init Mode Manager
     mode_manager = ModeManager()

@@ -173,7 +173,7 @@ class VideoCamera:
                          # We launch a thread to wait and capture the snapshot so we don't block the video loop
                         threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(),), daemon=True).start()
 
-                    fourcc = cv2.VideoWriter_fourcc(*'avc1')
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     height, width, _ = frame.shape
                     out = cv2.VideoWriter(filename, fourcc, config.FPS, (width, height))
 

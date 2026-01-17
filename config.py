@@ -22,3 +22,8 @@ MAX_DURACION = 60              # Duración máxima de un clip (segundos)
 MAX_DAYS_STORAGE = 7
 MAX_USAGE_PERCENT = 5
 STORAGE_CLEANUP_INTERVAL = 1800 # 30 min
+
+# Configuración de Telegram
+TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
+TELEGRAM_CHAT_ID = "Portero Raspberry" # Puede ser string o int
+TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta

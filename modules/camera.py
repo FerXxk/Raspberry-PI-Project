@@ -121,6 +121,11 @@ class VideoCamera:
                     
                     logger.info(f"[REC] Start: {filename}")
                     
+                    # Telegram Alert Trigger (Non-blocking)
+                    if hasattr(self, 'telegram_service') and self.telegram_service:
+                         # We launch a thread to wait and capture the snapshot so we don't block the video loop
+                        threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(),), daemon=True).start()
+
                     fourcc = cv2.VideoWriter_fourcc(*'XVID')
                     height, width, _ = frame.shape
                     out = cv2.VideoWriter(filename, fourcc, config.FPS, (width, height))
@@ -167,6 +172,24 @@ class VideoCamera:
                 logger.error(f"Error in video loop: {e}")
                 time.sleep(0.1)
 
-        # Cleanup
-        if out is not None:
-            out.release()
+    def set_telegram_service(self, service):
+        self.telegram_service = service
+
+    def _trigger_telegram_alert(self, initial_frame):
+        """Waits for configured delay and sends the current best frame (or initial)."""
+        time.sleep(config.TELEGRAM_ALERT_DELAY)
+        
+        # Try to get a fresh frame if possible, else use initial
+        frame_to_send = initial_frame
+        if self.output_frame is not None:
+            # We prefer a fresh frame after 2s as it might show the subject better
+            with self.lock:
+                frame_to_send = self.output_frame.copy()
+        
+        # Save temp file
+        temp_path = os.path.join(config.BASE_DIR, "telegram_alert.jpg")
+        cv2.imwrite(temp_path, frame_to_send)
+        
+        # Send
+        if self.telegram_service:
+            self.telegram_service.send_alert(temp_path)

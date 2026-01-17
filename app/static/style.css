@@ -39,7 +39,6 @@ header {
     margin-top: 20px;
     flex-wrap: nowrap;
     overflow-x: auto;
-    /* Allow horizontal scroll on small screens */
 }
 
 .info-card {
@@ -66,15 +65,12 @@ header {
     color: var(--text-primary);
 }
 
-/* Status Colors for the Value only */
 .value-vigilando {
     color: #46954a;
-    /* Green */
 }
 
 .value-grabando {
     color: #f85149;
-    /* Red */
     animation: pulse 2s infinite;
 }
 
@@ -95,12 +91,10 @@ header {
 .video-container {
     width: 80%;
     margin: 0 auto;
-    /* Center */
     display: flex;
     justify-content: center;
     align-items: center;
     overflow: hidden;
-    /* Clean look: no border, no background */
 }
 
 .video-feed {
@@ -110,42 +104,63 @@ header {
     display: block;
 }
 
-/* Mode Colors */
 .value-mode1 {
     color: #fbbf24;
-    /* Amber for Doorbell mode */
 }
 
 .value-mode2 {
     color: #3b82f6;
-    /* Blue for Surveillance mode */
 }
 
-/* Mode Toggle Button */
+/* Mode Toggle & Navigation */
 .mode-toggle-container {
     display: flex;
     justify-content: center;
-    margin-top: 20px;
+    align-items: center;
+    gap: 15px;
+    margin-top: 25px;
 }
 
 .mode-toggle-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
     color: white;
     border: none;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-size: 1rem;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
 }
 
 .mode-toggle-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.3);
+    filter: brightness(1.1);
 }
 
-.mode-toggle-btn:active {
+.gallery-btn {
+    display: inline-block;
+    padding: 12px 30px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    text-decoration: none;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(8px);
+}
+
+.gallery-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.mode-toggle-btn:active,
+.gallery-btn:active {
     transform: translateY(0);
 }

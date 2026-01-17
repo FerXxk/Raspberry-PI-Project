@@ -2,5 +2,9 @@ Flask==3.0.0
 opencv-python-headless
 requests
 python-telegram-bot
-# Note: picamera2 and sense-hat are best installed via system packages on Raspberry Pi OS
+mediapipe
+numpy
+
+# Nota: picamera2 y sense-hat se instalan mejor vía paquetes del sistema en Raspberry Pi OS
+# sudo apt update
 # sudo apt install python3-picamera2 python3-sense-hat

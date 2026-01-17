@@ -92,7 +92,7 @@ class TelegramService:
             # Simplified: just try to play.
             
             # Send acknowledgement
-            await context.bot.send_message(chat_id=update.effective_chat.id, text="🔊 Mensaje de voz recibido. Reproduciendo...")
+            await context.bot.send_message(chat_id=update.effective_chat.id, text="Mensaje de voz recibido. Reproduciendo...")
             
             # Play command (Adjust based on installed tools)
             # -nodisp: no display, -autoexit: exit after playing, -volume: set startup volume
@@ -142,12 +142,12 @@ class TelegramService:
                 changed = self.mode_manager.set_mode(1)
                 if changed:
                     await update.message.reply_text(
-                        "✅ Modo cambiado a: Modo 1 - Portero\n"
-                        "🔔 El botón del SenseHat ahora funciona como timbre.\n"
-                        "📸 Se enviará una foto cuando se presione."
+                        "OK: Modo cambiado a: Modo 1 - Portero\n"
+                        "El boton del SenseHat ahora funciona como timbre.\n"
+                        "Se enviara una foto cuando se presione."
                     )
                 else:
-                    await update.message.reply_text("ℹ️ Ya estás en Modo 1 - Portero")
+                    await update.message.reply_text("INFO: Ya estas en Modo 1 - Portero")
             else:
                 await update.message.reply_text("❌ Mode manager no disponible")
         except Exception as e:
@@ -161,12 +161,12 @@ class TelegramService:
                 changed = self.mode_manager.set_mode(2)
                 if changed:
                     await update.message.reply_text(
-                        "✅ Modo cambiado a: Modo 2 - Video Vigilancia\n"
-                        "🎥 Detección de movimiento activada.\n"
-                        "📹 Se grabará video cuando se detecte movimiento."
+                        "OK: Modo cambiado a: Modo 2 - Video Vigilancia\n"
+                        "Deteccion de movimiento activada.\n"
+                        "Se grabara video cuando se detecte movimiento."
                     )
                 else:
-                    await update.message.reply_text("ℹ️ Ya estás en Modo 2 - Video Vigilancia")
+                    await update.message.reply_text("INFO: Ya estas en Modo 2 - Video Vigilancia")
             else:
                 await update.message.reply_text("❌ Mode manager no disponible")
         except Exception as e:
@@ -180,14 +180,14 @@ class TelegramService:
                 current_mode = self.mode_manager.get_mode()
                 mode_desc = self.mode_manager.get_mode_description()
                 
-                status_msg = f"📊 Estado del Sistema\n\n"
-                status_msg += f"🔧 Modo Actual: {current_mode}\n"
-                status_msg += f"📝 Descripción: {mode_desc}\n\n"
+                status_msg = f"ESTADO DEL SISTEMA\n\n"
+                status_msg += f"Modo Actual: {current_mode}\n"
+                status_msg += f"Descripcion: {mode_desc}\n\n"
                 
                 if current_mode == 1:
-                    status_msg += "🔔 Presiona el botón del SenseHat para tomar una foto"
+                    status_msg += "Presiona el boton del SenseHat para tomar una foto"
                 else:
-                    status_msg += "🎥 Sistema vigilando - grabará al detectar movimiento"
+                    status_msg += "Sistema vigilando - grabara al detectar movimiento"
                 
                 await update.message.reply_text(status_msg)
             else:

@@ -13,7 +13,7 @@ MIN_AREA = 5000                # Sensibilidad: área mínima en píxeles
 TIEMPO_SIN_MOVIMIENTO = 5      # Segundos a esperar tras dejar de detectar movimiento
 
 # Configuración de Grabación
-MAX_DURACION = 60              # Duración máxima de un clip (segundos)
+MAX_DURACION = 30              # Duración máxima de un clip (segundos)
 
 # Configuración de Almacenamiento
 MAX_DAYS_STORAGE = 7
@@ -40,5 +40,10 @@ MODE_DESCRIPTIONS = {
 }
 
 # Configuración de Sonido de Timbre
-DOORBELL_SOUND_PATH = os.path.join(BASE_DIR, "doorbell.mp3")  # Ruta al archivo de sonido
+DOORBELL_SOUND_PATH = os.path.join(BASE_DIR, "repository", "doorbell.mp3")  # Ruta al archivo de sonido
 DOORBELL_SOUND_VOLUME = 100      # Volumen del timbre (0-100)
+
+# Configuración de IA (MediaPipe)
+USE_AI_DETECTION = True          # Habilitar filtro de personas con MediaPipe
+AI_CONFIDENCE_THRESHOLD = 0.8    # Confianza mínima para detectar una persona
+AI_MODEL_PATH = os.path.join(BASE_DIR, "repository", "modelo_personas.tflite")

@@ -7,6 +7,7 @@ import libcamera
 import logging
 from picamera2 import Picamera2
 import config
+from modules.detector import PersonDetector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -23,11 +24,15 @@ class VideoCamera:
         self.mode_manager = mode_manager
         self.telegram_service = None
         
+        # Initialize AI detector
+        self.detector = PersonDetector() if config.USE_AI_DETECTION else None
+        
         # Flag to signal mode change during recording
         self.stop_recording_flag = False
         
         # Init Camera
         try:
+            # Configuración de Picamera2. Se usa RGB888 pero se ha observado que capture_array entrega BGR en este sistema.
             self.picam2 = Picamera2()
             config_cam = self.picam2.create_preview_configuration(
                 main={"size": config.RESOLUTION, "format": "RGB888"},
@@ -35,7 +40,7 @@ class VideoCamera:
             )
             self.picam2.configure(config_cam)
             self.picam2.start()
-            logger.info("Picamera2 iniciada correctamente.")
+            logger.info("Picamera2 iniciada correctamente (RGB888 config).")
         except Exception as e:
             logger.error(f"Fallo al iniciar Picamera2: {e}")
             self.picam2 = None
@@ -78,6 +83,8 @@ class VideoCamera:
         fondo = None
         grabando = False
         ultimo_movimiento_time = 0
+        fallos_ia_consecutivos = 0
+        ultima_revision_ia = 0
         out = None
         self.stop_recording_flag = False
         
@@ -96,9 +103,9 @@ class VideoCamera:
                 # Check current mode
                 current_mode = self.mode_manager.get_mode() if self.mode_manager else 2
                 
-                # 1. Capture
+                # 1. Capture - No swap manual ya que el driver entrega BGR directamente con config RGB888
                 frame = self.picam2.capture_array()
-                frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
+                # frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR) # No rotar si ya es BGR
                 
                 # Update shared frame for web streaming (both modes)
                 with self.lock:
@@ -136,14 +143,30 @@ class VideoCamera:
                 if movimiento_actual:
                     ultimo_movimiento_time = ahora
 
-                # 3. Recording Logic
+                # 3. Recording Logic (Trigger)
+                if movimiento_actual and not grabando:
+                    # AI Filtering (Trigger)
+                    if self.detector:
+                        has_person, detections = self.detector.detect_person(frame)
+                        if not has_person:
+                            # Log opcional para debug si hay movimiento pero no persona
+                            # logger.info("IA: Movimiento detectado pero sin persona clara.")
+                            movimiento_actual = False # Cancel trigger
+                        else:
+                            logger.info(f"IA: Detección positiva de persona. Iniciando grabación.")
+                            ultimo_movimiento_time = ahora # Reset timer
+                    else:
+                        ultimo_movimiento_time = ahora # Standard motion logic
+                    
                 if movimiento_actual and not grabando:
                     grabando = True
                     self.recording_start_time = ahora
+                    fallos_ia_consecutivos = 0
+                    ultima_revision_ia = ahora
                     timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
                     filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.avi")
                     
-                    logger.info(f"[REC] Start: {filename}")
+                    logger.info(f"[REC] Start (Person Detected): {filename}" if self.detector else f"[REC] Start: {filename}")
                     
                     # Telegram Alert Trigger (Non-blocking)
                     if hasattr(self, 'telegram_service') and self.telegram_service:
@@ -158,17 +181,37 @@ class VideoCamera:
                     if out is not None:
                         out.write(frame)
                     
+                    # Lógica de detección inteligente con IA
+                    persona_presente = movimiento_actual # Fallback si no hay detector
+                    if self.detector:
+                        # Comprobar cada 1 segundo
+                        if ahora - ultima_revision_ia >= 1.0:
+                            persona_presente, _ = self.detector.detect_person(frame)
+                            ultima_revision_ia = ahora
+                            
+                            if persona_presente:
+                                fallos_ia_consecutivos = 0
+                                ultimo_movimiento_time = ahora
+                            else:
+                                fallos_ia_consecutivos += 1
+                                logger.info(f"IA: Persona no detectada ({fallos_ia_consecutivos}/2 consecutivos)")
+                        else:
+                            # Entre revisiones de 1s, asumimos que sigue igual o nos basamos en movimiento
+                            persona_presente = True if fallos_ia_consecutivos == 0 else False
+                    
                     duracion_actual = ahora - self.recording_start_time
                     tiempo_quieto = ahora - ultimo_movimiento_time
                     
                     razon_parada = ""
                     if self.stop_recording_flag:
-                        razon_parada = "Mode change requested"
+                        razon_parada = "Cambio de modo solicitado"
                         self.stop_recording_flag = False
                     elif duracion_actual > config.MAX_DURACION:
-                        razon_parada = "Max duration exceeded"
-                    elif not movimiento_actual and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
-                        razon_parada = "No motion detected"
+                        razon_parada = "Duración máxima alcanzada"
+                    elif self.detector and fallos_ia_consecutivos >= 2:
+                        razon_parada = "Persona no detectada (2s consecutivos)"
+                    elif not persona_presente and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
+                        razon_parada = "Persona ausente (timeout)" if self.detector else "Sin movimiento detectado"
                     
                     if razon_parada:
                         grabando = False
@@ -207,56 +250,77 @@ class VideoCamera:
             logger.info("Stopping active recording due to mode change to Mode 1")
     
     def capture_doorbell_photo(self):
-        """Capture a single photo for doorbell mode and send via Telegram."""
-        if not self.picam2:
-            logger.error("Camera not available for doorbell photo")
+        """Dispara el proceso de captura inteligente para el timbre."""
+        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Timbre - Alguien en la puerta",), daemon=True).start()
+
+    def _trigger_telegram_alert(self, initial_frame):
+        """Dispara el proceso de captura inteligente para vigilancia."""
+        # Se lanza en un hilo para no bloquear el bucle de video
+        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Alerta de Movimiento", initial_frame), daemon=True).start()
+
+    def _capture_and_send_smart_alert(self, caption="Alerta", fallback_frame=None):
+        """
+        Lógica unificada para capturar la mejor foto posible usando IA:
+        - Espera el delay configurado en config.TELEGRAM_ALERT_DELAY.
+        - Muestrea frames durante 2 segundos adicionales.
+        - Se queda con el que tenga mayor confianza de 'persona'.
+        - Envía a Telegram.
+        """
+        import time
+        
+        logger.info(f"[SMART-ALERT] Iniciando captura inteligente: {caption}")
+        
+        # 1. Espera inicial (delay configurable)
+        time.sleep(config.TELEGRAM_ALERT_DELAY)
+        
+        # 2. Ventana de muestreo (2 segundos buscando a la persona)
+        # Empezamos con el fallback (frame del momento del trigger) o el frame actual
+        best_frame = fallback_frame if fallback_frame is not None else (self.output_frame.copy() if self.output_frame is not None else None)
+        best_score = 0
+        window_end = time.time() + 2.0
+        
+        if self.detector:
+            logger.info("[SMART-ALERT] Analizando frames para encontrar la mejor captura...")
+            while time.time() < window_end:
+                current_frame = None
+                with self.lock:
+                    if self.output_frame is not None:
+                        current_frame = self.output_frame.copy()
+                
+                if current_frame is not None:
+                    has_person, detections = self.detector.detect_person(current_frame)
+                    if has_person:
+                        # Extraemos el score de la categoría 'person'
+                        score = detections[0].categories[0].score
+                        if score > best_score:
+                            best_score = score
+                            best_frame = current_frame
+                            logger.info(f"[SMART-ALERT] Frame mejorado encontrado (Confianza: {score:.2f})")
+                
+                time.sleep(0.3) # Muestrear cada 300ms para no saturar la CPU
+        
+        if best_frame is None:
+            logger.error("[SMART-ALERT] No se pudo obtener ningún frame válido")
             return
+
+        # 3. Guardar y enviar
+        timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
+        filename = f"smart_alert_{timestamp}.jpg"
+        temp_path = os.path.join(config.BASE_DIR, filename)
         
         try:
-            logger.info("[DOORBELL] Button pressed - capturing photo")
+            cv2.imwrite(temp_path, best_frame)
+            logger.info(f"[SMART-ALERT] Enviando imagen a Telegram (Score IA: {best_score:.2f})")
             
-            # Capture frame
-            frame = self.picam2.capture_array()
-            frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-            
-            # Save temp file
-            timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
-            temp_path = os.path.join(config.BASE_DIR, f"doorbell_{timestamp}.jpg")
-            cv2.imwrite(temp_path, frame)
-            
-            logger.info(f"[DOORBELL] Photo saved: {temp_path}")
-            
-            # Send via Telegram
             if self.telegram_service:
-                self.telegram_service.send_alert(temp_path, caption="🔔 Timbre - Alguien en la puerta")
+                self.telegram_service.send_alert(temp_path, caption=caption)
             
-            # Cleanup after a delay (let telegram send first)
+            # Borrado diferido para dar tiempo al envío
             def cleanup():
-                time.sleep(5)
+                time.sleep(10)
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
-                    logger.info(f"[DOORBELL] Photo deleted: {temp_path}")
-            
             threading.Thread(target=cleanup, daemon=True).start()
             
         except Exception as e:
-            logger.error(f"Error capturing doorbell photo: {e}")
-
-    def _trigger_telegram_alert(self, initial_frame):
-        """Waits for configured delay and sends the current best frame (or initial)."""
-        time.sleep(config.TELEGRAM_ALERT_DELAY)
-        
-        # Try to get a fresh frame if possible, else use initial
-        frame_to_send = initial_frame
-        if self.output_frame is not None:
-            # We prefer a fresh frame after 2s as it might show the subject better
-            with self.lock:
-                frame_to_send = self.output_frame.copy()
-        
-        # Save temp file
-        temp_path = os.path.join(config.BASE_DIR, "telegram_alert.jpg")
-        cv2.imwrite(temp_path, frame_to_send)
-        
-        # Send
-        if self.telegram_service:
-            self.telegram_service.send_alert(temp_path)
+            logger.error(f"[SMART-ALERT] Error al procesar/enviar alerta: {e}")

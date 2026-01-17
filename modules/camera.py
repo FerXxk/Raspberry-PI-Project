@@ -140,14 +140,18 @@ class VideoCamera:
                 if movimiento_actual:
                     ultimo_movimiento_time = ahora
 
-                # 3. Recording Logic
+                # 3. Recording Logic (Trigger)
                 if movimiento_actual and not grabando:
-                    # AI Filtering
+                    # AI Filtering (Trigger)
                     if self.detector:
                         has_person, detections = self.detector.detect_person(frame)
                         if not has_person:
-                            logger.info("AI: Motion detected but no person recognized. Skipping alert.")
+                            logger.info("AI: Movimiento detectado pero no se reconoce persona. Evitando alerta.")
                             movimiento_actual = False # Cancel trigger
+                        else:
+                            ultimo_movimiento_time = ahora # Reset timer if person found
+                    else:
+                        ultimo_movimiento_time = ahora # Standard motion logic
                     
                 if movimiento_actual and not grabando:
                     grabando = True
@@ -170,17 +174,25 @@ class VideoCamera:
                     if out is not None:
                         out.write(frame)
                     
+                    # Update person detection status if using AI
+                    persona_presente = movimiento_actual
+                    if self.detector:
+                        # Re-run detection while recording to see if person is still there
+                        persona_presente, _ = self.detector.detect_person(frame)
+                        if persona_presente:
+                            ultimo_movimiento_time = ahora
+                    
                     duracion_actual = ahora - self.recording_start_time
                     tiempo_quieto = ahora - ultimo_movimiento_time
                     
                     razon_parada = ""
                     if self.stop_recording_flag:
-                        razon_parada = "Mode change requested"
+                        razon_parada = "Cambio de modo solicitado"
                         self.stop_recording_flag = False
                     elif duracion_actual > config.MAX_DURACION:
-                        razon_parada = "Max duration exceeded"
-                    elif not movimiento_actual and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
-                        razon_parada = "No motion detected"
+                        razon_parada = "Duración máxima alcanzada"
+                    elif not persona_presente and tiempo_quieto > config.TIEMPO_SIN_MOVIMIENTO:
+                        razon_parada = "Persona ya no detectada" if self.detector else "Sin movimiento detectado"
                     
                     if razon_parada:
                         grabando = False

@@ -13,7 +13,7 @@ MIN_AREA = 5000                # Sensibilidad: área mínima en píxeles
 TIEMPO_SIN_MOVIMIENTO = 5      # Segundos a esperar tras dejar de detectar movimiento
 
 # Configuración de Grabación
-MAX_DURACION = 60              # Duración máxima de un clip (segundos)
+MAX_DURACION = 30              # Duración máxima de un clip (segundos)
 
 # Configuración de Almacenamiento
 MAX_DAYS_STORAGE = 7
@@ -30,7 +30,7 @@ AUTO_START_VPN = True            # Iniciar Tailscale automáticamente con run.py
 # Configuración de Telegram
 TELEGRAM_TOKEN = "8517781523:AAHmklsFPDFfJQppkvaMlchH3Cpg2PtbFAc"
 TELEGRAM_CHAT_ID = "7013484502" 
-TELEGRAM_ALERT_DELAY = 2         # Segundos de espera antes de capturar foto para alerta
+TELEGRAM_ALERT_DELAY = 5         # Segundos de espera antes de capturar foto para alerta
 
 # Configuración de Modos de Operación
 OPERATION_MODE = 2               # Modo por defecto: 1 = Portero, 2 = Video Vigilancia

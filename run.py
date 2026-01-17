@@ -30,7 +30,15 @@ if __name__ == "__main__":
 
     print("Iniciando Sistema de Vigilancia (Restructured)...")
     
-    # 0. Iniciar VPN Tailscale
+    # 0. Descargar modelo de IA si es necesario
+    if config.USE_AI_DETECTION:
+        try:
+            from scripts.download_model import download_model
+            download_model()
+        except ImportError:
+            print("Warning: Could not import download_model. Ensure scripts/download_model.py exists.")
+    
+    # 0.1 Iniciar VPN Tailscale
     start_vpn()
     
     # 1. Init Mode Manager

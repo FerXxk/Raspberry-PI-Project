@@ -42,3 +42,8 @@ MODE_DESCRIPTIONS = {
 # Configuración de Sonido de Timbre
 DOORBELL_SOUND_PATH = os.path.join(BASE_DIR, "doorbell.mp3")  # Ruta al archivo de sonido
 DOORBELL_SOUND_VOLUME = 100      # Volumen del timbre (0-100)
+
+# Configuración de IA (MediaPipe)
+USE_AI_DETECTION = True          # Habilitar filtro de personas con MediaPipe
+AI_CONFIDENCE_THRESHOLD = 0.5    # Confianza mínima para detectar una persona
+AI_MODEL_PATH = os.path.join(BASE_DIR, "models", "modelo_personas.tflite")

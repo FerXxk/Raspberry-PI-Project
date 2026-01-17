@@ -7,6 +7,7 @@ import libcamera
 import logging
 from picamera2 import Picamera2
 import config
+from modules.detector import PersonDetector
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,9 @@ class VideoCamera:
         self.thread = None
         self.mode_manager = mode_manager
         self.telegram_service = None
+        
+        # Initialize AI detector
+        self.detector = PersonDetector() if config.USE_AI_DETECTION else None
         
         # Flag to signal mode change during recording
         self.stop_recording_flag = False
@@ -138,12 +142,20 @@ class VideoCamera:
 
                 # 3. Recording Logic
                 if movimiento_actual and not grabando:
+                    # AI Filtering
+                    if self.detector:
+                        has_person, detections = self.detector.detect_person(frame)
+                        if not has_person:
+                            logger.info("AI: Motion detected but no person recognized. Skipping alert.")
+                            movimiento_actual = False # Cancel trigger
+                    
+                if movimiento_actual and not grabando:
                     grabando = True
                     self.recording_start_time = ahora
                     timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
                     filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.avi")
                     
-                    logger.info(f"[REC] Start: {filename}")
+                    logger.info(f"[REC] Start (Person Detected): {filename}" if self.detector else f"[REC] Start: {filename}")
                     
                     # Telegram Alert Trigger (Non-blocking)
                     if hasattr(self, 'telegram_service') and self.telegram_service:

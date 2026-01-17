@@ -82,8 +82,8 @@ class TelegramService:
             await context.bot.send_message(chat_id=update.effective_chat.id, text="🔊 Mensaje de voz recibido. Reproduciendo...")
             
             # Play command (Adjust based on installed tools)
-            # -nodisp: no display, -autoexit: exit after playing
-            cmd = f"ffplay -nodisp -autoexit -hide_banner \"{download_path}\"" 
+            # -nodisp: no display, -autoexit: exit after playing, -volume: set startup volume
+            cmd = f"ffplay -nodisp -autoexit -hide_banner -volume {config.VOLUME_LEVEL} \"{download_path}\"" 
             os.system(cmd)
             
             # Cleanup

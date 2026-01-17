@@ -30,6 +30,24 @@ Módulo inteligente (`modules/storage.py`) que asegura que el disco nunca se lle
     2. **Por Espacio**: Si el disco supera el **90% de uso**, borra los videos más antiguos hasta liberar un 5% de espacio.
 - **Ciclo de Mantenimiento**: Se ejecuta automáticamente cada 30 minutos.
 
+### 4. Telegram Service
+Módulo que permite controlar la cámara a través de Telegram.
+- **Funcionalidades**:
+    - **Reproducción de Mensajes de Voz**: Permite reproducir mensajes de voz enviados desde Telegram.
+    - **Alertas de Movimiento**: Envía alertas de movimiento a través de Telegram.
+    - **Reproducción de Audio**: Permite reproducir audio enviados desde Telegram.
+
+## 🌍 Acceso Remoto (VPN)
+Para acceder a la cámara desde fuera de casa de forma segura, incluimos un script para configurar **Tailscale**:
+
+1. Ejecuta el script de instalación en la Raspberry Pi:
+   ```bash
+   sudo bash scripts/setup_tailscale.sh
+   ```
+2. Sigue el enlace que aparece en pantalla para loguearte con tu cuenta.
+3. El script te mostrará una **IP de Tailscale** (ej. `100.x.y.z`).
+4. Desde tu móvil/PC (con Tailscale instalado), entra a: `http://100.x.y.z:5000`.
+
 ## 🛠️ Stack Tecnológico
 - **Hardware**: Raspberry Pi 4, Cámara, Disco USB.
 - **Backend de Visión**: Python 3.11+, `picamera2`, `opencv-python`.

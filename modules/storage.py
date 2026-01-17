@@ -23,6 +23,25 @@ class GestorAlmacenamiento:
             self.logger.error(f"Ruta no encontrada: {self.path}")
             return 0
 
+    def obtener_estado_detallado(self):
+        """Devuelve un diccionario con info detallada del disco."""
+        try:
+            total, used, free = shutil.disk_usage(self.path)
+            percent = (used / total) * 100
+            # Convert bytes to MB
+            total_mb = total / (1024 * 1024)
+            used_mb = used / (1024 * 1024)
+            free_mb = free / (1024 * 1024)
+            
+            return {
+                "total_mb": total_mb,
+                "used_mb": used_mb,
+                "free_mb": free_mb,
+                "percent": percent
+            }
+        except FileNotFoundError:
+            return None
+
     def limpiar_por_antiguedad(self):
         """Elimina archivos más antiguos que max_days."""
         if not os.path.exists(self.path):

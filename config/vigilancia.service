@@ -1,0 +1,16 @@
+[Unit]
+Description=Servicio de Vigilancia y NAS con Telegram
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/Raspberry-PI-Project
+ExecStart=/usr/bin/python3 /home/pi/Raspberry-PI-Project/run.py
+Restart=always
+RestartSec=5
+StandardOutput=inherit
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target

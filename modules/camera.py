@@ -3,6 +3,7 @@ import time
 import datetime
 import os
 import threading
+import subprocess
 import libcamera
 import logging
 from picamera2 import Picamera2
@@ -164,16 +165,15 @@ class VideoCamera:
                     fallos_ia_consecutivos = 0
                     ultima_revision_ia = ahora
                     timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
-                    filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.avi")
+                    filename = os.path.join(config.PATH_NAS, f"alerta_{timestamp}.mp4")
                     
                     logger.info(f"[REC] Start (Person Detected): {filename}" if self.detector else f"[REC] Start: {filename}")
                     
-                    # Telegram Alert Trigger (Non-blocking)
                     if hasattr(self, 'telegram_service') and self.telegram_service:
-                         # We launch a thread to wait and capture the snapshot so we don't block the video loop
-                        threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(),), daemon=True).start()
+                        # Telegram Alert Trigger (Non-blocking) - Pass filename for thumbnail
+                        threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(), filename), daemon=True).start()
 
-                    fourcc = cv2.VideoWriter_fourcc(*'XVID')
+                    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
                     height, width, _ = frame.shape
                     out = cv2.VideoWriter(filename, fourcc, config.FPS, (width, height))
 
@@ -218,7 +218,10 @@ class VideoCamera:
                         if out is not None:
                             out.release()
                             out = None
-                        logger.info(f"[STOP] {razon_parada}. Returning to surveillance.")
+                            # Iniciar post-procesado con FFmpeg para compatibilidad web total
+                            threading.Thread(target=self._optimize_video_for_web, args=(filename,), daemon=True).start()
+                            
+                        logger.info(f"[STOP] {razon_parada}. Post-processing started for {filename}")
                         fondo = gris
 
                 # 4. Status Update
@@ -238,6 +241,56 @@ class VideoCamera:
                 logger.error(f"Error en el bucle de video: {e}")
                 time.sleep(0.1)
 
+    def _optimize_video_for_web(self, raw_path):
+        """
+        Usa FFmpeg para convertir el vídeo a H.264 optimizado para web (faststart).
+        Esto permite que el vídeo se reproduzca en streaming sin esperar a descargarse entero.
+        """
+        if not os.path.exists(raw_path):
+            return
+
+        final_path = raw_path # El nombre ya termina en .mp4
+        temp_path = raw_path + ".temp.mp4"
+        
+        try:
+            # Renombramos el original a temp
+            os.rename(raw_path, temp_path)
+            
+            logger.info(f"FFmpeg: Optimizando {final_path}...")
+            
+            # Comando FFmpeg:
+            # -i: input
+            # -c:v libx264: codec H.264 (el más compatible)
+            # -preset ultrafast: para que la raspi no sufra
+            # -movflags +faststart: pone el 'moov atom' al principio (clave para streaming)
+            # -y: sobrescribir si existe
+            cmd = [
+                'ffmpeg', '-y', '-i', temp_path,
+                '-c:v', 'libx264', '-preset', 'ultrafast',
+                '-crf', '28', # Balance calidad/velocidad
+                '-movflags', '+faststart',
+                final_path
+            ]
+            
+            # Ejecutar conversión
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            
+            if result.returncode == 0:
+                logger.info(f"FFmpeg: Conversión exitosa. Archivo listo para streaming: {final_path}")
+                # Borramos el temporal si todo fue bien
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+            else:
+                logger.error(f"FFmpeg falló: {result.stderr}")
+                # Si falla, intentamos dejar el original como estaba para que al menos se pueda descargar
+                if os.path.exists(temp_path) and not os.path.exists(final_path):
+                    os.rename(temp_path, final_path)
+                    
+        except Exception as e:
+            logger.error(f"Error durante el post-procesado de vídeo: {e}")
+            if os.path.exists(temp_path) and not os.path.exists(final_path):
+                os.rename(temp_path, final_path)
+
     def set_telegram_service(self, service):
         self.telegram_service = service
     
@@ -253,30 +306,38 @@ class VideoCamera:
         """Dispara el proceso de captura inteligente para el timbre."""
         threading.Thread(target=self._capture_and_send_smart_alert, args=(" Timbre - Alguien en la puerta",), daemon=True).start()
 
-    def _trigger_telegram_alert(self, initial_frame):
+    def _trigger_telegram_alert(self, initial_frame, video_path=None):
         """Dispara el proceso de captura inteligente para vigilancia."""
         # Se lanza en un hilo para no bloquear el bucle de video
-        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Alerta de Movimiento", initial_frame), daemon=True).start()
+        threading.Thread(target=self._capture_and_send_smart_alert, args=(" Alerta de Movimiento", initial_frame, video_path), daemon=True).start()
 
-    def _capture_and_send_smart_alert(self, caption="Alerta", fallback_frame=None):
+    def _capture_and_send_smart_alert(self, caption="Alerta", fallback_frame=None, video_path=None):
         """
         Lógica unificada para capturar la mejor foto posible usando IA:
         - Espera el delay configurado en config.TELEGRAM_ALERT_DELAY.
         - Muestrea frames durante 2 segundos adicionales.
         - Se queda con el que tenga mayor confianza de 'persona'.
         - Envía a Telegram.
+        - Si hay video_path, guarda la imagen como miniatura (.jpg).
         """
         import time
         
         logger.info(f"[SMART-ALERT] Iniciando captura inteligente: {caption}")
         
-        # 1. Espera inicial (delay configurable)
-        time.sleep(config.TELEGRAM_ALERT_DELAY)
-        
-        # 2. Ventana de muestreo (2 segundos buscando a la persona)
-        # Empezamos con el fallback (frame del momento del trigger) o el frame actual
+        # 1. Análisis del frame inicial (fallback) para asegurar que no haya 0.00
         best_frame = fallback_frame if fallback_frame is not None else (self.output_frame.copy() if self.output_frame is not None else None)
         best_score = 0
+        
+        if self.detector and best_frame is not None:
+            has_person, detections = self.detector.detect_person(best_frame)
+            if has_person:
+                best_score = detections[0].categories[0].score
+                logger.info(f"[SMART-ALERT] Score inicial detectado: {best_score:.2f}")
+
+        # 2. Espera inicial (delay configurable)
+        time.sleep(config.TELEGRAM_ALERT_DELAY)
+        
+        # 3. Ventana de muestreo (2 segundos buscando a la persona)
         window_end = time.time() + 2.0
         
         if self.detector:
@@ -305,15 +366,21 @@ class VideoCamera:
 
         # 3. Guardar y enviar
         timestamp = datetime.datetime.now().strftime("%d-%m-%Y__%H-%M-%S")
-        filename = f"smart_alert_{timestamp}.jpg"
-        temp_path = os.path.join(config.BASE_DIR, filename)
+        filename_photo = f"smart_alert_{timestamp}.jpg"
+        temp_path = os.path.join(config.BASE_DIR, filename_photo)
         
         try:
             cv2.imwrite(temp_path, best_frame)
             logger.info(f"[SMART-ALERT] Enviando imagen a Telegram (Score IA: {best_score:.2f})")
             
+            # Si hay un video asociado, guardar permanentemente en NAS como miniatura
+            if video_path:
+                thumb_path = video_path.rsplit('.', 1)[0] + ".jpg"
+                cv2.imwrite(thumb_path, best_frame)
+                logger.info(f"[SMART-ALERT] Miniatura guardada en NAS: {thumb_path}")
+
             if self.telegram_service:
-                self.telegram_service.send_alert(temp_path, caption=caption)
+                self.telegram_service.send_alert(temp_path, caption=f"{caption} (Confianza IA: {best_score:.2f})")
             
             # Borrado diferido para dar tiempo al envío
             def cleanup():

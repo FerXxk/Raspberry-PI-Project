@@ -1,7 +1,7 @@
 import os
 
 # Rutas de Archivos
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PATH_NAS = "/mnt/grabaciones_camara/"
 
 # Configuración de Cámara

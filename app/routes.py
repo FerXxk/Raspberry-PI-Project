@@ -1,4 +1,7 @@
-from flask import Blueprint, render_template, Response, jsonify, current_app, request
+from flask import Blueprint, render_template, Response, jsonify, current_app, request, send_from_directory
+import os
+import datetime
+import config
 
 main_bp = Blueprint('main', __name__)
 
@@ -84,3 +87,46 @@ def set_mode():
         "mode": mode_manager.get_mode(),
         "description": mode_manager.get_mode_description()
     })
+
+@main_bp.route("/gallery")
+def gallery():
+    """Render the video gallery page."""
+    return render_template("gallery.html")
+
+@main_bp.route("/api/recordings")
+def list_recordings():
+    """Return a list of recordings from the NAS directory."""
+    recordings = []
+    if os.path.exists(config.PATH_NAS):
+        files = [f for f in os.listdir(config.PATH_NAS) if f.endswith('.mp4')]
+        # Sort by modification time (newest first)
+        files.sort(key=lambda x: os.path.getmtime(os.path.join(config.PATH_NAS, x)), reverse=True)
+        
+        for f in files:
+            path = os.path.join(config.PATH_NAS, f)
+            stat = os.stat(path)
+            
+            # Check for matching thumbnail (.jpg)
+            thumb_name = f.rsplit('.', 1)[0] + ".jpg"
+            thumbnail_url = None
+            if os.path.exists(os.path.join(config.PATH_NAS, thumb_name)):
+                thumbnail_url = f"/thumbnails/{thumb_name}"
+
+            recordings.append({
+                "filename": f,
+                "size_mb": round(stat.st_size / (1024 * 1024), 2),
+                "date": datetime.datetime.fromtimestamp(stat.st_mtime).strftime('%d/%m/%Y %H:%M:%S'),
+                "thumbnail_url": thumbnail_url
+            })
+    
+    return jsonify(recordings)
+
+@main_bp.route("/recordings/<path:filename>")
+def serve_video(filename):
+    """Serve a video file from the NAS directory with proper mimetype."""
+    return send_from_directory(config.PATH_NAS, filename, mimetype='video/mp4')
+
+@main_bp.route("/thumbnails/<path:filename>")
+def serve_thumbnail(filename):
+    """Serve a thumbnail image from the NAS directory."""
+    return send_from_directory(config.PATH_NAS, filename)

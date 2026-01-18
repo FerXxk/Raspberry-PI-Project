@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galería Premium - Vigilancia Pi</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}?v=5">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="gallery-wrapper">
+        <header class="page-header">
+            <div class="page-title">
+                <h1>Grabaciones NAS</h1>
+            </div>
+            <a href="/" class="gallery-btn">← Volver al Dashboard</a>
+        </header>
+
+        <div id="video-grid" class="video-grid">
+            <div class="empty-state">
+                <span style="font-size: 40px; display: block; margin-bottom: 10px;">⌛</span>
+                Sincronizando con el servidor...
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Player -->
+    <div id="modal-player" class="modal">
+        <button class="btn-close" onclick="closePlayer()">✕</button>
+        <div class="modal-container">
+            <h2 id="modal-title" style="margin-bottom: 20px; font-weight: 600; color: white; text-align: center;"></h2>
+            <video id="v-player" controls preload="auto" style="width: 100%; border-radius: 12px;">
+                <source id="v-source" src="" type="video/mp4">
+            </video>
+        </div>
+    </div>
+
+    <script>
+        async function fetchRecordings() {
+            try {
+                const res = await fetch('/api/recordings');
+                const data = await res.json();
+                const grid = document.getElementById('video-grid');
+
+                if (data.length === 0) {
+                    grid.innerHTML = `
+                        <div class="empty-state">
+                            <span style="font-size: 50px; display: block; margin-bottom: 20px;">📂</span>
+                            <p style="font-size: 1.2rem; margin: 0;">No se han detectado grabaciones todavía.</p>
+                            <p style="color: #8b949e; margin-top: 10px;">Los eventos aparecerán aquí automáticamente.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                grid.innerHTML = '';
+                data.forEach(vid => {
+                    const card = document.createElement('div');
+                    card.className = 'video-card';
+
+                    // Si hay miniatura, la ponemos de fondo; si no, queda el estilo por defecto del CSS
+                    const thumbStyle = vid.thumbnail_url
+                        ? `style="background-image: url('${vid.thumbnail_url}'); background-size: cover;"`
+                        : '';
+
+                    card.innerHTML = `
+                        <div class="card-thumbnail" onclick="playVideo('${vid.filename}')" ${thumbStyle}></div>
+                        <div class="card-content">
+                            <span class="card-title">${vid.filename}</span>
+                            <div class="card-meta">
+                                <span>📅 ${vid.date}</span>
+                                <span style="color: #3b82f6;">💾 ${vid.size_mb} MB</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            } catch (e) {
+                console.error('Fetch error:', e);
+            }
+        }
+
+        function playVideo(file) {
+            const modal = document.getElementById('modal-player');
+            const player = document.getElementById('v-player');
+            const source = document.getElementById('v-source');
+            const title = document.getElementById('modal-title');
+
+            title.innerText = file;
+            source.src = `/recordings/${file}`;
+            modal.style.display = 'flex';
+
+            player.load();
+            player.play();
+        }
+
+        function closePlayer() {
+            const modal = document.getElementById('modal-player');
+            const player = document.getElementById('v-player');
+            player.pause();
+            modal.style.display = 'none';
+        }
+
+        window.onclick = e => { if (e.target.id === 'modal-player') closePlayer(); }
+
+        // Initial load
+        fetchRecordings();
+    </script>
+</body>
+
+</html>

@@ -85,60 +85,10 @@ El bot de Telegram es tu mando a distancia:
 
 ---
 
-## ⚙️ 5. Configuración (`config.py`)
-
-Puedes personalizar el comportamiento del sistema editando el archivo de configuración central:
-
-```python
-# --- Parámetros ajustados actualmente ---
-MAX_DURACION = 30              # Duración máxima de los clips de video
-TIEMPO_SIN_MOVIMIENTO = 5      # Segundos de espera para confirmar fin de movimiento
-TELEGRAM_ALERT_DELAY = 2       # Tiempo que la IA espera para buscar la "mejor cara"
-AI_CONFIDENCE_THRESHOLD = 0.8  # Confianza mínima de la IA (80%)
-MAX_USAGE_PERCENT = 85         # Límite de llenado del disco NAS
-```
-
 ---
 
-## 🔧 6. Instalación y Puesta en Marcha
+## 🚀 Instalación y Despliegue
 
-### Requisitos Previos e Instalación Física
-
-1. **Cámara Pi**: 
-   - Conecta el cable flex al puerto CSI de la Raspberry Pi (asegúrate de que el lado azul mire hacia los puertos USB).
-   - En el software, asegúrate de que la cámara esté habilitada. (En versiones modernas Bookworm/Bullseye, `libcamera` funciona por defecto).
-2. **SenseHat**:
-   - Encaja el SenseHat sobre los pines GPIO de la Raspberry Pi con la Pi apagada. Asegúrate de que todos los pines estén alineados.
-3. **Almacenamiento**: Conecta un disco duro o pendrive y móntalo en la ruta configurada en `config.py` (por defecto `/mnt/grabaciones_camara/`).
-
-### Configuración del Sistema
-
-1. **Expandir Sistema**: `sudo raspi-config` > Advanced Options > Expand Filesystem.
-
-2. **Dependencias del Sistema**:
-   ```bash
-   sudo apt-get update
-   sudo apt-get install -y python3-picamera2 python3-opencv ffmpeg python3-sense-hat
-   ```
-3. **Dependencias de Python**:
-   ```bash
-   pip3 install -r requirements.txt
-   ```
-
-### Ejecución
-```bash
-python3 run.py
-```
-
----
-
-## 🌍 7. Acceso Remoto Seguro
-El proyecto incluye un script de configuración para **Tailscale** (`scripts/setup_tailscale.sh`). Una vez instalado, podrás acceder a la interfaz web incluso si estás en otra ciudad o usando datos móviles, sin necesidad de abrir puertos en tu router.
-
-**Pasos para configurar Tailscale:**
-1. Ejecuta el script: `bash scripts/setup_tailscale.sh`
-2. Sigue el enlace que se te proporciona para registrar la Raspberry Pi.
-3. Instala Tailscale en tu móvil o computadora y loguéate con la misma cuenta.
-4. Una vez conectados, usa la IP de Tailscale de la Raspberry (ej. `100.x.y.z:5000`) para entrar a la web desde cualquier lugar.
+Para instrucciones detalladas sobre cómo instalar dependencias, configurar el servicio en una Raspberry Pi y poner en marcha el sistema, consulta la **[Guía de Despliegue](file:///c:/Users/ferna/Desktop/Raspberry-PI-Project/DEPLOYMENT.md)**.
 
 ---

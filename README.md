@@ -75,7 +75,12 @@ Tu Raspberry Pi actúa ahora como un servidor de archivos (NAS) para que puedas 
 Accede desde `http://<IP-RASPBERRY>:5000` a un panel de control premium:
 
 <p align="center">
-  <img src="media/webStreaming.png" alt="Dashboard Preview" width="600">
+  <img src="docs/media/webStreaming.png" alt="Dashboard Streaming" width="600"><br>
+  <em>Panel de control principal: Streaming en tiempo real y telemetría en vivo</em>
+</p>
+<p align="center">
+  <img src="docs/media/webGrabaciones.png" alt="Galería de Grabaciones" width="600"><br>
+  <em>Galería interactiva: Gestión y reproducción remota de grabaciones</em>
 </p>
 
 - **Live Streaming**: Vídeo en tiempo real con latencia mínima y colores corregidos.
@@ -91,7 +96,9 @@ Accede desde `http://<IP-RASPBERRY>:5000` a un panel de control premium:
 El bot de Telegram es tu mando a distancia:
 
 <p align="center">
-  <img src="media/telegram_alert.png" alt="Telegram Alert" width="300">
+  <img src="docs/media/telegram1.png" alt="Telegram Alert 1" width="300">
+  <img src="docs/media/telegram2.png" alt="Telegram Alert 2" width="300"><br>
+  <em>Alertas inteligentes: El bot envía ráfagas de fotos optimizadas cuando detecta movimiento o actividad en el timbre</em>
 </p>
 
 - `/portero`: Activa el Modo portero.
@@ -114,13 +121,15 @@ Gracias a la integración con **Tailscale**, el sistema es accesible desde cualq
 ## 🛠️ 7. Hardware
 
 <p align="center">
-  <img src="media/hardware.png" alt="Hardware Setup" width="500">
+  <img src="docs/media/montaje.png" alt="Hardware Setup" width="500"><br>
+  <em>Montaje experimental: Raspberry Pi 4 junto al SenseHat y módulo de cámara</em>
 </p>
 
 El sistema está diseñado para funcionar en una **Raspberry Pi 4** con:
 - **Cámara Pi** (Cualquier versión compatible con libcamera).
 - **SenseHat** (Para telemetría y control físico).
 - **Disco Externo/Pendrive** (Para el almacenamiento de grabaciones).
+- **Altavoces** (Para la reproducción de mensajes de voz).
 
 ---
 

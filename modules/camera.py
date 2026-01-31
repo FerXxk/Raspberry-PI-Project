@@ -10,7 +10,7 @@ from picamera2 import Picamera2
 import config
 from modules.detector import PersonDetector
 
-# Configure logging
+# Configuración de logs
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("Camera")
 
@@ -25,13 +25,13 @@ class VideoCamera:
         self.mode_manager = mode_manager
         self.telegram_service = None
         
-        # Initialize AI detector
+        # Detector por IA
         self.detector = PersonDetector() if config.USE_AI_DETECTION else None
         
-        # Flag to signal mode change during recording
+        # Flag para forzar parada al cambiar de modo
         self.stop_recording_flag = False
         
-        # Init Camera
+        # Inicio de cámara
         try:
             # Configuración de Picamera2. Se usa RGB888 pero se ha observado que capture_array entrega BGR en este sistema.
             self.picam2 = Picamera2()
@@ -41,7 +41,7 @@ class VideoCamera:
             )
             self.picam2.configure(config_cam)
             self.picam2.start()
-            logger.info("Picamera2 iniciada correctamente (RGB888 config).")
+            logger.info("Picamera2 inicializada correctamente.")
         except Exception as e:
             logger.error(f"Fallo al iniciar Picamera2: {e}")
             self.picam2 = None
@@ -53,7 +53,7 @@ class VideoCamera:
             self.thread.daemon = True
             self.thread.start()
             
-            # Register mode change observer
+            # Observador para cambios de modo
             if self.mode_manager:
                 self.mode_manager.register_observer(self._on_mode_change)
 
@@ -74,7 +74,7 @@ class VideoCamera:
             return encodedImage.tobytes()
 
     def get_status(self):
-        """Returns status string and recording duration."""
+        """Estado de la cámara y duración de la grabación."""
         duration = 0
         if self.status == "GRABANDO":
             duration = int(time.time() - self.recording_start_time)
@@ -89,13 +89,13 @@ class VideoCamera:
         out = None
         self.stop_recording_flag = False
         
-        # Ensure NAS path exists
+        # Varificar si la carpeta NAS existe
         if not os.path.exists(config.PATH_NAS):
             try:
                 os.makedirs(config.PATH_NAS)
             except OSError as e:
                 logger.error(f"Error creando el directorio NAS: {e}")
-                # We can continue but recording will fail.
+                
         
         time.sleep(2) # Warmup
 
@@ -112,14 +112,13 @@ class VideoCamera:
                 with self.lock:
                     self.output_frame = frame.copy()
                 
-                # Mode 1: Doorbell - just stream, no motion detection
+                # Modo Portero: Solo streaming sin detección
                 if current_mode == 1:
                     self.status = "MODO PORTERO"
-                    time.sleep(0.1)  # Reduce CPU usage
+                    time.sleep(0.1) 
                     continue
                 
-                # Mode 2: Video Surveillance - motion detection
-                # 2. Processing
+                # Modo Vigilancia: Detección de movimiento
                 gris = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
                 gris = cv2.GaussianBlur(gris, (21, 21), 0)
 
@@ -144,9 +143,9 @@ class VideoCamera:
                 if movimiento_actual:
                     ultimo_movimiento_time = ahora
 
-                # 3. Recording Logic (Trigger)
+                # Lógica de disparo de grabación
                 if movimiento_actual and not grabando:
-                    # AI Filtering (Trigger)
+                    # Filtro de IA 
                     if self.detector:
                         has_person, detections = self.detector.detect_person(frame)
                         if not has_person:
@@ -170,7 +169,7 @@ class VideoCamera:
                     logger.info(f"[REC] Start (Person Detected): {filename}" if self.detector else f"[REC] Start: {filename}")
                     
                     if hasattr(self, 'telegram_service') and self.telegram_service:
-                        # Telegram Alert Trigger (Non-blocking) - Pass filename for thumbnail
+                        # Alerta de Telegram 
                         threading.Thread(target=self._trigger_telegram_alert, args=(frame.copy(), filename), daemon=True).start()
 
                     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -181,8 +180,8 @@ class VideoCamera:
                     if out is not None:
                         out.write(frame)
                     
-                    # Lógica de detección inteligente con IA
-                    persona_presente = movimiento_actual # Fallback si no hay detector
+                    # Detección inteligente para decidir si seguir grabando
+                    persona_presente = movimiento_actual 
                     if self.detector:
                         # Comprobar cada 1 segundo
                         if ahora - ultima_revision_ia >= 1.0:
@@ -218,19 +217,19 @@ class VideoCamera:
                         if out is not None:
                             out.release()
                             out = None
-                            # Iniciar post-procesado con FFmpeg para compatibilidad web total
+                            # Optimización para web con FFmpeg
                             threading.Thread(target=self._optimize_video_for_web, args=(filename,), daemon=True).start()
                             
                         logger.info(f"[STOP] {razon_parada}. Post-processing started for {filename}")
                         fondo = gris
 
-                # 4. Status Update
+                # Actualizar estado
                 if grabando:
                     self.status = "GRABANDO"
                 else:
                     self.status = "VIGILANDO"
 
-                # 5. Visualization overlay (Mode 2 only)
+                # Rectángulos si hay movimiento
                 if movimiento_actual:
                     for c in contornos:
                         if cv2.contourArea(c) >= config.MIN_AREA:
@@ -258,16 +257,12 @@ class VideoCamera:
             
             logger.info(f"FFmpeg: Optimizando {final_path}...")
             
-            # Comando FFmpeg:
-            # -i: input
-            # -c:v libx264: codec H.264 (el más compatible)
-            # -preset ultrafast: para que la raspi no sufra
-            # -movflags +faststart: pone el 'moov atom' al principio (clave para streaming)
-            # -y: sobrescribir si existe
+            # Comando FFmpeg para optimizar el video
+           
             cmd = [
                 'ffmpeg', '-y', '-i', temp_path,
                 '-c:v', 'libx264', '-preset', 'ultrafast',
-                '-crf', '28', # Balance calidad/velocidad
+                '-crf', '28', 
                 '-movflags', '+faststart',
                 final_path
             ]
@@ -298,7 +293,6 @@ class VideoCamera:
         """Callback when mode changes. Stop recording if switching from Mode 2."""
         logger.info(f"Camera received mode change: {old_mode} → {new_mode}")
         if old_mode == 2 and new_mode == 1:
-            # Switching from surveillance to doorbell - stop any active recording
             self.stop_recording_flag = True
             logger.info("Stopping active recording due to mode change to Mode 1")
     

@@ -18,13 +18,13 @@ def start_storage_manager(manager):
         time.sleep(config.STORAGE_CLEANUP_INTERVAL)
 
 def create_app():
-    # Helper to create app independently if needed for tests
+    # Helper para crear la app 
     app = Flask(__name__, template_folder="app/templates", static_folder="app/static")
     app.register_blueprint(main_bp)
     return app
 
 if __name__ == "__main__":
-    # Suppress output from Werkzeug
+    # Silenciar logs de Werkzeug para una consola más limpia
     import logging
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.ERROR)
@@ -39,47 +39,40 @@ if __name__ == "__main__":
         except ImportError:
             print("Warning: Could not import download_model. Ensure scripts/download_model.py exists.")
     
-    # 0.1 Iniciar VPN Tailscale
+    # Servicios base (VPN, Samba)
     start_vpn()
-    
-    # 0.2 Iniciar NAS (Samba)
     ensure_samba_started()
     
-    # 1. Init Mode Manager
+    # Gestión de modos (Vigilancia / Portero)
     mode_manager = ModeManager()
     
-    # 2. Init Modules with mode manager
+    # Inicialización de módulos
     camera = VideoCamera(mode_manager=mode_manager)
     sensors = SensorManager(mode_manager=mode_manager, camera=camera)
     storage = GestorAlmacenamiento(config.PATH_NAS, config.MAX_DAYS_STORAGE, config.MAX_USAGE_PERCENT, config.STORAGE_CLEANUP_PERCENT)
     telegram = TelegramService(config.TELEGRAM_TOKEN, config.TELEGRAM_CHAT_ID, mode_manager=mode_manager)
     
-    # 3. Setup App
+    # Configuración de la web app y contexto
     app = create_app()
-    # Attach modules to app context for routes to access
     app.camera = camera
     app.sensors = sensors
     app.telegram = telegram
     app.mode_manager = mode_manager
     
-    # Wire Camera to Telegram for alerts
+    # Vincular cámara con Telegram para alertas
     camera.set_telegram_service(telegram)
     
-    # 4. Start Background Threads
-    # Camera
-    print("Starting Camera...")
+    # Inicio de hilos secundarios
+    print("Iniciando Cámara...")
     camera.start()
     
-    # Sensors (button monitoring)
-    print("Starting Button Monitoring...")
+    print("Monitorizando botones...")
     sensors.start_button_monitoring()
     
-    # Telegram
-    print("Starting Telegram Service...")
+    print("Servicio Telegram activo...")
     telegram.start()
     
-    # Storage
-    print("Starting Storage Manager...")
+    print("Gestor de almacenamiento activo...")
     t_storage = threading.Thread(target=start_storage_manager, args=(storage,))
     t_storage.daemon = True
     t_storage.start()
@@ -101,7 +94,7 @@ if __name__ == "__main__":
     print(f" MODO ACTUAL: {mode_manager.get_mode()} - {mode_manager.get_mode_description()}")
     print("="*40 + "\n")
     
-    # 5. Run Server
+    # Ejecución del servidor
     try:
         app.run(host="0.0.0.0", port=5000, debug=False, use_reloader=False)
     except KeyboardInterrupt:

@@ -9,11 +9,11 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filte
 from telegram.ext import CommandHandler
 import config
 
-# Configure logging
+# Configuración de logs
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("TelegramService")
+logger = logging.getLogger("Telegram")
 
-# Suppress noisy HTTP logs from telegram libraries
+# Silenciar logs innecesarios de librerías
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("telegram").setLevel(logging.WARNING)
 logging.getLogger("telegram.ext").setLevel(logging.WARNING)
@@ -29,18 +29,17 @@ class TelegramService:
         self.thread = None
         
         if self.token == "TU_TOKEN_AQUI":
-            logger.warning("Telegram Token not set. Telegram service will be disabled.")
+            logger.warning("Token de Telegram no configurado.")
             return
 
         try:
-            # We use ApplicationBuilder which is the standard for python-telegram-bot v20+
             self.app = ApplicationBuilder().token(self.token).build()
             
-            # Add handler for voice messages
+            # Manejador de mensajes de voz
             voice_handler = MessageHandler(filters.VOICE, self.handle_voice)
             self.app.add_handler(voice_handler)
             
-            # Add command handlers for mode switching
+            # Comandos para cambiar de modo
             
             self.app.add_handler(CommandHandler("portero", self.handle_modo1))
             self.app.add_handler(CommandHandler("vigilancia", self.handle_modo2))
@@ -49,26 +48,26 @@ class TelegramService:
             self.bot = self.app.bot
             
         except Exception as e:
-            logger.error(f"Failed to initialize Telegram Service: {e}")
+            logger.error(f"Fallo al iniciar el servicio de Telegram: {e}")
 
     def start(self):
         if not self.app:
             return
 
-        # Run bot polling in a separate thread with its own asyncio loop
+        # Ejecutar polling en un hilo separado
         self.thread = threading.Thread(target=self._run_polling, daemon=True)
         self.thread.start()
-        logger.info("Telegram Service started (polling).")
+        logger.info("Servicio Telegram iniciado.")
 
     def _run_polling(self):
-        # Create a new event loop for this thread
+        # Nuevo bucle para este hilo
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         self.loop = loop
         
-        # Run polling
+        # Iniciar polling (sin señales para no chocar con Flask)
         try:
-            loop.run_until_complete(self.app.run_polling(stop_signals=None)) # Disable signal handling to avoid interfering with Flask
+            loop.run_until_complete(self.app.run_polling(stop_signals=None)) 
         except Exception as e:
             logger.error(f"Telegram polling error: {e}")
         finally:
@@ -78,42 +77,27 @@ class TelegramService:
         try:
             file = await context.bot.get_file(update.message.voice.file_id)
             
-            # Define path
+            # Descargar audio
             download_path = os.path.join(config.BASE_DIR, "voice_message.ogg")
             await file.download_to_drive(download_path)
             
-            logger.info(f"Voice message received and saved to {download_path}")
+            logger.info(f"Mensaje de voz guardado en {download_path}")
             
-            # Play audio
-            # Using os.system with aplay (for wav) or cvlc/mpg123/ffplay for ogg.
-            # RPi usually has aplay. OGG might need 'vorbis-tools' (ogg123) or ffmpeg.
-            # We'll try a generic command or expect 'ffplay'/'cvlc'.
-            # For robustness, let's assume 'cvlc' (VLC) or 'ffplay' is available or 'aplay' if converted.
-            # Simplified: just try to play.
-            
-            # Send acknowledgement
+            # Reproducción con ffplay
             await context.bot.send_message(chat_id=update.effective_chat.id, text="Mensaje de voz recibido. Reproduciendo...")
-            
-            # Play command (Adjust based on installed tools)
-            # -nodisp: no display, -autoexit: exit after playing, -volume: set startup volume
             cmd = f"ffplay -nodisp -autoexit -hide_banner -volume {config.VOLUME_LEVEL} \"{download_path}\"" 
             os.system(cmd)
             
-            # Cleanup
+            # Limpieza
             if os.path.exists(download_path):
                 os.remove(download_path)
-                logger.info("Voice message deleted.")
+                logger.info("Archivo de voz eliminado.")
                 
         except Exception as e:
             logger.error(f"Error handling voice message: {e}")
 
     def send_alert(self, image_path, caption="Movimiento detectado"):
-        """
-        Sends an image to the configured chat_id.
-        This method is thread-safe and can be called from Camera thread.
-        Uses synchronous requests for simplicity in calling from non-async context,
-        or we could schedule it on the loop. For robustness, standard requests is fine for sending.
-        """
+        """Envía una foto al chat configurado."""
         if not self.token or self.chat_id == "TU_CHAT_ID_AQUI":
             return
 
@@ -125,18 +109,18 @@ class TelegramService:
                     data = {'chat_id': self.chat_id, 'caption': caption}
                     response = requests.post(url, files=files, data=data)
                     if response.status_code != 200:
-                         logger.error(f"Failed to send Telegram alert: {response.text}")
+                         logger.error(f"Error al enviar a Telegram: {response.text}")
                     else:
-                        logger.info("Telegram alert sent.")
+                        logger.info("Alerta de Telegram enviada.")
             except Exception as e:
                 logger.error(f"Error sending Telegram alert: {e}")
 
-        # Run in a separate thread to not block the Camera loop
+        # Hilo separado para no bloquear la cámara
         sender_thread = threading.Thread(target=_send)
         sender_thread.start()
     
     async def handle_modo1(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /modo1 command to switch to Doorbell mode."""
+        """Comando /portero."""
         try:
             if self.mode_manager:
                 changed = self.mode_manager.set_mode(1)
@@ -147,15 +131,15 @@ class TelegramService:
                         "Se enviara una foto cuando se presione."
                     )
                 else:
-                    await update.message.reply_text("INFO: Ya estas en Modo 1 - Portero")
+                    await update.message.reply_text("INFO: Ya estás en Modo 1 - Portero")
             else:
-                await update.message.reply_text("❌ Mode manager no disponible")
+                await update.message.reply_text(" Gestor de modos no disponible")
         except Exception as e:
-            logger.error(f"Error handling /modo1: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+            logger.error(f"Error en /modo1: {e}")
+            await update.message.reply_text(f" Error: {e}")
     
     async def handle_modo2(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /modo2 command to switch to Video Surveillance mode."""
+        """Comando /vigilancia."""
         try:
             if self.mode_manager:
                 changed = self.mode_manager.set_mode(2)
@@ -166,15 +150,15 @@ class TelegramService:
                         "Se grabara video cuando se detecte movimiento."
                     )
                 else:
-                    await update.message.reply_text("INFO: Ya estas en Modo 2 - Video Vigilancia")
+                    await update.message.reply_text("INFO: Ya estás en Modo 2 - Video Vigilancia")
             else:
-                await update.message.reply_text("❌ Mode manager no disponible")
+                await update.message.reply_text(" Gestor de modos no disponible")
         except Exception as e:
-            logger.error(f"Error handling /modo2: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+            logger.error(f"Error en /modo2: {e}")
+            await update.message.reply_text(f" Error: {e}")
     
     async def handle_estado(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /estado command to report current mode and status."""
+        """Comando /estado."""
         try:
             if self.mode_manager:
                 current_mode = self.mode_manager.get_mode()
@@ -191,7 +175,7 @@ class TelegramService:
                 
                 await update.message.reply_text(status_msg)
             else:
-                await update.message.reply_text("❌ Mode manager no disponible")
+                await update.message.reply_text(" Gestor de modos no disponible")
         except Exception as e:
-            logger.error(f"Error handling /estado: {e}")
-            await update.message.reply_text(f"❌ Error: {e}")
+            logger.error(f"Error en /estado: {e}")
+            await update.message.reply_text(f" Error: {e}")

@@ -12,32 +12,29 @@ try:
 except ImportError:
     MEDIAPIPE_AVAILABLE = False
 
-# Configure logging
+# Configuración de logs
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("PersonDetector")
+logger = logging.getLogger("Detector")
 
 class PersonDetector:
-    """
-    Handles person detection using MediaPipe tasks.
-    """
+    """Gestión de detección de personas con MediaPipe."""
     def __init__(self):
         self.detector = None
         if not MEDIAPIPE_AVAILABLE:
-            logger.error("MediaPipe library not found. AI detection will be disabled.")
+            logger.error("Librería MediaPipe no encontrada.")
             return
 
         if not config.USE_AI_DETECTION:
-            logger.info("AI detection is disabled in config.")
+            logger.info("Detección IA desactivada en la configuración.")
             return
 
         self._initialize_detector()
 
     def _initialize_detector(self):
-        """Initializes the Object Detector task."""
+        """Inicializa el modelo de detección de objetos."""
         try:
             if not os.path.exists(config.AI_MODEL_PATH):
-                logger.warning(f"AI Model file not found at {config.AI_MODEL_PATH}")
-                # We don't fail here, maybe it's downloaded later or shown as error on first detection
+                logger.warning(f"Modelo IA no encontrado en {config.AI_MODEL_PATH}")
                 return
 
             base_options = python.BaseOptions(model_asset_path=config.AI_MODEL_PATH)
@@ -49,9 +46,9 @@ class PersonDetector:
                 category_allowlist=['person']
             )
             self.detector = vision.ObjectDetector.create_from_options(options)
-            logger.info("MediaPipe Person Detector initialized successfully.")
+            logger.info("Detector de personas (MediaPipe) iniciado.")
         except Exception as e:
-            logger.error(f"Error initializing MediaPipe detector: {e}")
+            logger.error(f"Error al iniciar MediaPipe: {e}")
             self.detector = None
 
     def detect_person(self, frame):
@@ -68,7 +65,7 @@ class PersonDetector:
                 return False, []
 
         try:
-            # Importante: frame viene en BGR (OpenCV). Convertir a RGB para MediaPipe.
+            # Convertir a RGB para MediaPipe.
             rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
 
@@ -87,5 +84,5 @@ class PersonDetector:
             return has_person, detection_result.detections
 
         except Exception as e:
-            logger.error(f"Error during AI detection: {e}")
+            logger.error(f"Error en detección IA: {e}")
             return False, []

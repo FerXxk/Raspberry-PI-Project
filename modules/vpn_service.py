@@ -6,12 +6,12 @@ import config
 logger = logging.getLogger("VPNService")
 
 def check_vpn_status():
-    """Checks if Tailscale is up and running."""
+    """Verifica si Tailscale está activo."""
     try:
-        # Check if tailscale is installed
+        # Verificar si tailscale está instalado
         subprocess.run(["tailscale", "--version"], capture_output=True, check=True)
         
-        # Check status
+        # Comprobar estado
         result = subprocess.run(["tailscale", "status"], capture_output=True, text=True)
         if "Tailscale is stopped" in result.stdout or result.returncode != 0:
             return False
@@ -20,19 +20,18 @@ def check_vpn_status():
         return False
 
 def start_vpn():
-    """Starts Tailscale VPN if enabled and not running."""
+    """Inicia Tailscale si está habilitado."""
     if not config.AUTO_START_VPN:
         return
 
-    logger.info("Checking VPN status...")
+    logger.info("Verificando VPN...")
     if check_vpn_status():
-        logger.info("VPN is already running.")
+        logger.info("La VPN ya está activa.")
     else:
-        logger.info("VPN is not running. Attempting to start Tailscale...")
+        logger.info("La VPN no está activa. Intentando iniciar Tailscale...")
         try:
-            # We use 'tailscale up' which is safe if already authenticated.
-            # If not authenticated, it might print a login URL.
+            # Intento de conexión
             subprocess.Popen(["sudo", "tailscale", "up"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            logger.info("Tailscale 'up' command sent.")
+            logger.info("Comando 'tailscale up' enviado.")
         except Exception as e:
-            logger.error(f"Failed to start VPN: {e}")
+            logger.error(f"Fallo al iniciar VPN: {e}")

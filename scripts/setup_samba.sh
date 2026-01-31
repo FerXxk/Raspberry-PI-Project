@@ -3,7 +3,7 @@
 # Script para configurar la Raspberry Pi como un servidor NAS (Samba)
 # para la carpeta de grabaciones de la cámara.
 
-echo "🎬 Configurando servidor NAS para grabaciones..."
+echo "Configurando servidor NAS para grabaciones..."
 
 # 1. Instalar Samba si no está presente
 sudo apt update
@@ -35,13 +35,13 @@ if ! grep -q "\[Grabaciones\]" /etc/samba/smb.conf; then
    directory mask = 0777
    force user = pi
 EOF
-    echo "✅ Recurso [Grabaciones] añadido a smb.conf (Acceso privado)"
+    echo "Recurso [Grabaciones] añadido a smb.conf (Acceso privado)"
 else
-    echo "ℹ️ El recurso [Grabaciones] ya existe en smb.conf"
+    echo "El recurso [Grabaciones] ya existe en smb.conf"
 fi
 
 # 6. Configurar contraseña para el usuario 'pi'
-echo "🔐 Configurando contraseña para el acceso al NAS..."
+echo "Configurando contraseña para el acceso al NAS..."
 echo "Por favor, introduce la contraseña para el usuario 'pi' en Samba:"
 sudo smbpasswd -a pi
 
@@ -49,7 +49,7 @@ sudo smbpasswd -a pi
 sudo systemctl restart smbd
 sudo systemctl enable smbd
 
-echo "🚀 Servidor NAS activado correctamente."
+echo "Servidor NAS activado correctamente."
 echo "Carpeta compartida: \\\\$(hostname).local\\Grabaciones"
 echo "Usuario: pi"
 echo "Recuerda usar la contraseña que acabas de configurar."

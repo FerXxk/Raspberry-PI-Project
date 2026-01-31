@@ -1,75 +1,75 @@
-# Guía de Despliegue - Raspberry PI Project
+# Deployment Guide - Raspberry PI Project
 
-Este documento detalla los pasos para desplegar el servicio de vigilancia en una Raspberry Pi.
+This document details the steps to deploy the surveillance service on a Raspberry Pi.
 
-## 1. Preparación del Sistema y Dependencias
+## 1. System Preparation and Dependencies
 
-Asegúrate de que la Raspberry Pi tenga acceso a todo el almacenamiento disponible y las librerías necesarias:
+Ensure the Raspberry Pi has access to all available storage and the necessary libraries:
 
-1. **Expandir Sistema de Archivos**:
+1. **Expand Filesystem**:
    ```bash
    sudo raspi-config
    ```
-   Ve a `Advanced Options` > `Expand Filesystem`. Reinicia la Raspberry Pi después de este paso.
+   Go to `Advanced Options` > `Expand Filesystem`. Reboot the Raspberry Pi after this step.
 
-2. **Instalar Dependencias del Sistema**:
+2. **Install System Dependencies**:
    ```bash
    sudo apt update && sudo apt upgrade -y
    sudo apt install -y python3-pip python3-picamera2 python3-opencv ffmpeg python3-sense-hat libgl1
    ```
 
-3. **Instalar Librerías de Python**:
+3. **Install Python Libraries**:
    ```bash
    pip install -r config/requirements.txt
    ```
 
-## 2. Configuración de Servicios Adicionales
+## 2. Configuration of Additional Services
 
-### NAS Local (Samba)
-Para acceder a las grabaciones desde cualquier dispositivo de la red local:
+### Local NAS (Samba)
+To access recordings from any device on the local network:
 ```bash
 bash scripts/setup_samba.sh
 ```
-Esto configurará un recurso compartido con contraseña en `/mnt/grabaciones_camara/`. (usuario: pi contraseña: se define en el script)
+This will configure a password-protected share at `/mnt/grabaciones_camara/`. (user: pi, password: defined in the script)
 
-### Acceso Remoto (Tailscale VPN)
-Para ver la cámara desde fuera de casa sin abrir puertos:
+### Remote Access (Tailscale VPN)
+To view the camera from outside your home without opening ports:
 ```bash
 bash scripts/setup_tailscale.sh
 ```
-Sigue el enlace que aparecerá en la terminal para vincular la Raspberry Pi a tu cuenta.
+Follow the link that appears in the terminal to link the Raspberry Pi to your account.
 
-Cuando la Raspberry Pi se vincule a tu cuenta, puedes acceder a la IP que se le asigna a la Raspberry Pi (100.xxx.xxx.xxx) desde cualquier dispositivo con la app de Tailscale.
+When the Raspberry Pi is linked to your account, you can access the IP assigned to the Raspberry Pi (100.xxx.xxx.xxx) from any device with the Tailscale app.
 
-Por lo que podrás acceder a la carpeta de grabaciones y a la web de streaming desde tu PC y desde tu móvil.
+Therefore, you will be able to access the recordings folder and the streaming website from both your PC and your mobile.
 
-## 3. Configuración del Servicio (Systemd)
+## 3. Service Configuration (Systemd)
 
-Para que el sistema se inicie automáticamente:
+To make the system start automatically:
 
-1. Copia el archivo de servicio:
+1. Copy the service file:
    ```bash
    sudo cp config/vigilancia.service /etc/systemd/system/
    ```
 
-2. Activa e inicia el servicio:
+2. Enable and start the service:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable vigilancia.service
    sudo systemctl start vigilancia.service
    ```
 
-   Esto hará que el sistema se inicie automáticamente al encender la Raspberry Pi o ante un cierre inesperado.
+   This will ensure the system starts automatically when the Raspberry Pi is turned on or after an unexpected shutdown.
 
-## 4. Monitoreo y Logs
+## 4. Monitoring and Logs
 ```bash
 journalctl -u vigilancia.service -f
 ```
-Podrás ver los logs del sistema en tiempo real.
+You will be able to see the system logs in real-time.
 
-## 5. Ajustes finales
+## 5. Final Adjustments
 
-Si quieres cambiar la configuración del sistema, puedes editar el archivo `config/config.py` para ajustar los parámetros de la cámara, la detección de movimiento, la grabación, el almacenamiento, el audio, el acceso remoto, el Telegram y el modo de operación.
+If you want to change the system configuration, you can edit the `config/config.py` file to adjust camera parameters, motion detection, recording, storage, audio, remote access, Telegram, and operation mode.
 
 
 

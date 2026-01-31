@@ -1,120 +1,120 @@
-# 🛡️ Sistema de Vigilancia Inteligente con NAS Local
+# 🛡️ Smart Surveillance System with Local NAS
 
-Este proyecto es una solución de seguridad avanzada basada en **Edge Computing** que transforma una Raspberry Pi 4 en un sistema de vigilancia profesional. Utiliza inteligencia artificial para la detección de personas, gestiona automáticamente el almacenamiento en un disco NAS y permite el control total a través de una interfaz web y Telegram. 🚀
+This project is an advanced **Edge Computing** security solution that transforms a Raspberry Pi 4 into a professional surveillance system. It uses artificial intelligence for person detection, automatically manages storage on a NAS drive, and allow full control through a web interface and Telegram. 🚀
 
-El uso del sistema es simple:
-- Cuando estes en casa y quieras saber quién llama a la puerta, con el modo portero activado cuando alguien llame a la puerta el sistema hará sonar un sonido de timbre de alta calidad y enviara una foto a Telegram.
-- Cuando estes fuera de casa y quieras que la cámara te envie una foto cuando detecte movimiento, con el modo vigilancia activado cuando alguien se aproxime a la casa el sistema te avisará por Telegram y guardará un vídeo del momento en el NAS. De esta forma podrás tener un conocimiento total de quién ha intentado entrar a tu casa. 
-- Podrás acceder a los vídeos desde cualquier dispositivo y lugar del mundo con la app de Tailscale. Por lo tanto irte de vacaciones no será un problema.
-- El sistema es inteligente y solo te enviará alertas cuando se detecte a una persona en el campo de visión de la cámara.
-- Podrás enviar audios desde Telegram para que el sistema los reproduzca, avisando así a los intrusos que no están bienvenidos.
-- El sistema es altamente personalizable y puedes ajustar los parámetros de la cámara, la detección de movimiento, la grabación, el almacenamiento, el audio, el acceso remoto, el Telegram y el modo de operación.
+System usage is simple:
+- When you are at home and want to know who is at the door, with **Doorbell Mode** activated, when someone rings the bell, the system will play a high-quality chime sound and send a photo to Telegram.
+- When you are away and want the camera to send you a photo when it detects movement, with **Surveillance Mode** activated, when someone approaches the house, the system will notify you via Telegram and save a video of the moment on the NAS. This way, you can have complete knowledge of who tried to enter your home.
+- You can access the videos from any device and anywhere in the world with the Tailscale app. Thus, going on vacation won't be a problem.
+- The system is smart and will only send you alerts when a person is detected in the camera's field of view.
+- You can send audio messages from Telegram for the system to play, warning intruders that they are not welcome.
+- The system is highly customizable, allowing you to adjust camera parameters, motion detection, recording, storage, audio, remote access, Telegram, and operation mode.
 
-## 📁 Estado Actual del Proyecto
+## 📁 Current Project Status
 
-El sistema ha evolucionado de un script básico de cámara a una infraestructura modular y robusta que incluye:
+The system has evolved from a basic camera script to a modular and robust infrastructure that includes:
 
-- **IA Integrada**: Detección de personas mediante MediaPipe para eliminar falsas alarmas.
-- **Gestión NAS**: Limpieza automática de disco y políticas de retención de vídeo.
-- **Sistema Dual**: Cambia entre modo **Timbre Inteligente** y **Cámara de Seguridad**.
-- **Acceso Remoto**: VPN integrada para ver tu casa desde cualquier lugar.
-- **Control por Voz**: Reproducción de mensajes enviados desde Telegram.
-
----
-
-## 🔄 1. Modos de Operación
-
-El sistema permite alternar entre dos configuraciones principales según tus necesidades:
-
-### 🔔 Modo 1: Portero (Doorbell)
-Diseñado para ser el corazón de tu entrada.
-- **Disparador**: Pulsación física del botón central en el SenseHat.
-- **Acciones**:
-  - 🔊 Reproduce un sonido de timbre de alta calidad.
-  - 📸 **Captura Inteligente**: El sistema espera `TELEGRAM_ALERT_DELAY` y luego analiza ráfagas de imágenes durante 2 segundos para enviar a Telegram la foto donde se vea mejor a la persona.
-- **Uso**: Ideal cuando estás en casa y quieres saber quién llama a la puerta desde tu móvil.
-
-### 🎥 Modo 2: Video Vigilancia
-Vigilancia activa 24/7 con IA.
-- **Disparador**: Detección de movimiento mediante OpenCV.
-- **Acciones**:
-  - 🔍 **Filtro de IA**: Verifica instantáneamente si hay una persona antes de grabar.
-  - 📹 **Grabación Automática**: Guarda clips en formato **.mp4** en tu almacenamiento NAS.
-  - 🚨 **Alerta de Emergencia**: Envía una notificación con la mejor captura de la persona a Telegram.
-  - 🛑 **Parada Inteligente**: Si la persona sale del encuadre, la grabación se detiene tras 2 segundos de ausencia para ahorrar espacio.
-- **Uso**: Seguridad perimetral y detección de intrusos.
+- **Integrated AI**: Person detection using MediaPipe to eliminate false alarms.
+- **NAS Management**: Automatic disk cleaning and video retention policies.
+- **Dual System**: Switch between **Smart Doorbell** and **Security Camera** modes.
+- **Remote Access**: Integrated VPN to view your home from anywhere.
+- **Voice Control**: Playback of messages sent from Telegram.
 
 ---
 
-## 🧠 2. Arquitectura del Sistema (Core)
+## 🔄 1. Operation Modes
 
-El software está dividido en módulos independientes coordinados por `run.py`:
+The system allows you to alternate between two main configurations based on your needs:
 
-- **`camera.py`**: Gestiona la lógica de Picamera2, el procesamiento de frames y la detección de movimiento.
-- **`detector.py`**: Motor de IA basado en MediaPipe. Utiliza el modelo `efficientdet_lite0.tflite` para reconocer humanos con alta precisión.
-- **`storage.py`**: El "limpiador" del NAS. Controla que el disco no se llene siguiendo dos reglas:
-    1. **Antigüedad**: Borra vídeos de más de `MAX_DAYS_STORAGE` (por defecto 7 días).
-    2. **Capacidad**: Si el disco supera el `MAX_USAGE_PERCENT` (85%), libera espacio borrando los archivos más antiguos.
-- **`sensors.py`**: Gestiona el SenseHat (temperatura, humedad, presión) y el monitoreo del botón central del joystick.
-- **`telegram_service.py`**: Gestiona la comunicación móvil. Permite recibir alertas y enviar comandos/voz.
+### 🔔 Mode 1: Doorbell
+Designed to be the heart of your entrance.
+- **Trigger**: Physical press of the center button on the SenseHat.
+- **Actions**:
+  - 🔊 Plays a high-quality doorbell sound.
+  - 📸 **Smart Capture**: The system waits for `TELEGRAM_ALERT_DELAY` and then analyzes bursts of images for 2 seconds to send to Telegram the photo where the person is best seen.
+- **Usage**: Ideal when you are at home and want to know who is calling at the door from your mobile.
+
+### 🎥 Mode 2: Video Surveillance
+24/7 active surveillance with AI.
+- **Trigger**: Motion detection using OpenCV.
+- **Actions**:
+  - 🔍 **AI Filter**: Instantly verifies if there is a person before recording.
+  - 📹 **Automatic Recording**: Saves clips in **.mp4** format on your NAS storage.
+  - 🚨 **Emergency Alert**: Sends a notification with the best capture of the person to Telegram.
+  - 🛑 **Smart Stop**: If the person leaves the frame, the recording stops after 2 seconds of absence to save space.
+- **Usage**: Perimeter security and intruder detection.
+
 ---
 
-## 📂 3. Almacenamiento NAS (Samba)
+## 🧠 2. System Architecture (Core)
 
-Tu Raspberry Pi actúa ahora como un servidor de archivos (NAS) para que puedas ver los vídeos directamente desde el explorador de archivos de tu PC o móvil:
+The software is divided into independent modules coordinated by `run.py`:
 
-- **Configuración rápida**: Ejecuta `bash scripts/setup_samba.sh` una vez.
-- **Nombre de red**: `\\raspberrypi.local\Grabaciones` (en Windows) o `smb://raspberrypi.local/Grabaciones` (en Mac/Móvil).
-- **Control automático**: Cada vez que ejecutas `run.py`, el sistema verifica que el servidor NAS esté activo.
-- **Seguridad**: El acceso está protegido (configura tu usuario con el script de instalación).
+- **`camera.py`**: Manages Picamera2 logic, frame processing, and motion detection.
+- **`detector.py`**: AI engine based on MediaPipe. Uses the `efficientdet_lite0.tflite` model to recognize humans with high precision.
+- **`storage.py`**: The "NAS cleaner." It ensures the disk doesn't fill up by following two rules:
+    1. **Age**: Deletes videos older than `MAX_DAYS_STORAGE` (default is 7 days).
+    2. **Capacity**: If disk usage exceeds `MAX_USAGE_PERCENT` (85%), it frees up space by deleting the oldest files.
+- **`sensors.py`**: Manages the SenseHat (temperature, humidity, pressure) and monitors the center joystick button.
+- **`telegram_service.py`**: Manages mobile communication. Allows receiving alerts and sending commands/voice.
+---
+
+## 📂 3. NAS Storage (Samba)
+
+Your Raspberry Pi now acts as a file server (NAS) so you can view videos directly from your PC or mobile file explorer:
+
+- **Quick Setup**: Run `bash scripts/setup_samba.sh` once.
+- **Network Name**: `\\raspberrypi.local\Grabaciones` (on Windows) or `smb://raspberrypi.local/Grabaciones` (on Mac/Mobile).
+- **Automatic Control**: Every time you run `run.py`, the system verifies that the NAS server is active.
+- **Security**: Access is protected (configure your user with the installation script).
 
 ---
 
-## 🖥️ 4. Interfaz Web y Control
+## 🖥️ 4. Web Interface and Control
 
-Accede desde `http://<IP-RASPBERRY>:5000` a un panel de control premium:
+Access a premium control panel from `http://<RASPBERRY-IP>:5000`:
 
 <p align="center">
-  <img src="docs/media/webStreaming.png" alt="Dashboard Streaming" width="600"><br>
-  <em>Panel de control principal: Streaming en tiempo real y telemetría en vivo</em>
+  <img src="docs/media/webStreaming.png" alt="Streaming Dashboard" width="600"><br>
+  <em>Main control panel: Real-time streaming and live telemetry</em>
 </p>
 <p align="center">
-  <img src="docs/media/webGrabaciones.png" alt="Galería de Grabaciones" width="600"><br>
-  <em>Galería interactiva: Gestión y reproducción remota de grabaciones</em>
+  <img src="docs/media/webGrabaciones.png" alt="Recordings Gallery" width="600"><br>
+  <em>Interactive gallery: Remote management and playback of recordings</em>
 </p>
 
-- **Live Streaming**: Vídeo en tiempo real con latencia mínima y colores corregidos.
-- **Galería de Grabaciones**: Explora y reproduce todos los clips guardados directamente desde el navegador en `http://<IP-RASPBERRY>:5000/grabaciones`.
-- **Telemetría**: Gráficos y datos en vivo de la CPU y el ambiente (SenseHat).
-- **Gestión de Modos**: Cambia entre Portero y Vigilancia con un solo clic.
-- **Estado Visual**: Indicadores claros de **VIGILANDO** o **GRABANDO** con cronómetro integrado.
+- **Live Streaming**: Real-time video with minimal latency and corrected colors.
+- **Recordings Gallery**: Explore and play all saved clips directly from the browser at `http://<RASPBERRY-IP>:5000/grabaciones`.
+- **Telemetry**: Live charts and data for CPU and environment (SenseHat).
+- **Mode Management**: Switch between Doorbell and Surveillance with a single click.
+- **Visual Status**: Clear indicators of **WATCHING** or **RECORDING** with an integrated stopwatch.
 
 ---
 
-## 📱 5. Control por Telegram
+## 📱 5. Control via Telegram
 
-El bot de Telegram es tu mando a distancia:
+The Telegram bot is your remote control:
 
 <p align="center">
   <img src="docs/media/telegram1.png" alt="Telegram Alert 1" width="300">
   <img src="docs/media/telegram2.png" alt="Telegram Alert 2" width="300"><br>
-  <em>Alertas inteligentes: El bot envía ráfagas de fotos optimizadas cuando detecta movimiento o actividad en el timbre</em>
+  <em>Smart alerts: The bot sends optimized bursts of photos when motion or doorbell activity is detected</em>
 </p>
 
-- `/portero`: Activa el Modo portero.
-- `/vigilancia`: Activa el Modo vigilancia.
-- `/estado`: Reporte detallado de en qué está trabajando el sistema.
-- **Mensajes de Voz**: Envía un audio al chat y la Raspberry lo reproducirá por sus altavoces de forma inmediata.
+- `/portero`: Activates Doorbell Mode.
+- `/vigilancia`: Activates Surveillance Mode.
+- `/estado`: Detailed report of what the system is working on.
+- **Voice Messages**: Send an audio message to the chat and the Raspberry will play it through its speakers immediately.
 
 ---
 
-## 🌍 6. Acceso Remoto Seguro (VPN)
+## 🌍 6. Secure Remote Access (VPN)
 
-Gracias a la integración con **Tailscale**, el sistema es accesible desde cualquier lugar del mundo sin configurar el router:
+Thanks to **Tailscale** integration, the system is accessible from anywhere in the world without router configuration:
 
-- **Sin Apertura de Puertos**: Conexión segura punto a punto.
-- **Instalación**: Ejecuta `bash scripts/setup_tailscale.sh`.
-- **Uso**: Simplemente abre la app de Tailscale en tu móvil y accede a la IP de la Raspberry.
+- **No Port Forwarding**: Secure point-to-point connection.
+- **Installation**: Run `bash scripts/setup_tailscale.sh`.
+- **Usage**: Simply open the Tailscale app on your mobile and access the Raspberry IP.
 
 ---
 
@@ -122,21 +122,21 @@ Gracias a la integración con **Tailscale**, el sistema es accesible desde cualq
 
 <p align="center">
   <img src="docs/media/montaje.png" alt="Hardware Setup" width="500"><br>
-  <em>Montaje experimental: Raspberry Pi 4 junto al SenseHat y módulo de cámara</em>
+  <em>Experimental setup: Raspberry Pi 4 alongside the SenseHat and camera module</em>
 </p>
 
-El sistema está diseñado para funcionar en una **Raspberry Pi 4** con:
-- **Cámara Pi** (Cualquier versión compatible con libcamera).
-- **SenseHat** (Para telemetría y control físico).
-- **Disco Externo/Pendrive** (Para el almacenamiento de grabaciones).
-- **Altavoces** (Para la reproducción de mensajes de voz).
+The system is designed to run on a **Raspberry Pi 4** with:
+- **Pi Camera** (Any version compatible with libcamera).
+- **SenseHat** (For telemetry and physical control).
+- **External Disk/Flash Drive** (For recording storage).
+- **Speakers** (For playing voice messages).
 
 ---
 
 ---
 
-## 🚀 Instalación y Despliegue
+## 🚀 Installation and Deployment
 
-Para instrucciones detalladas sobre cómo instalar dependencias, configurar el servicio en una Raspberry Pi y poner en marcha el sistema, consulta la **[Guía de Despliegue](DEPLOYMENT.md)**.
+For detailed instructions on how to install dependencies, configure the service on a Raspberry Pi, and get the system running, see the **[Deployment Guide](DEPLOYMENT.md)**.
 
 ---
